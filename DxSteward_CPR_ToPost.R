@@ -47,7 +47,7 @@ CPR.funct <- function(data,outcome,iter,nvars_opts){
     
     test=data[-which(data$index %in% train$index),]
     
-    train_record <- c(train_record,table(train[,outcome])[["1"]]) #data$haz_0.5 is equivalent to data[,"haz_0.5"]
+    train_record <- c(train_record,table(train[,outcome])[["1"]])
     test_record <- c(test_record,table(test[,outcome])[["1"]])
     
     
@@ -196,7 +196,7 @@ SeSp.funct <- function(data,outcome,predictors,new.data,POC.Se,POC.Sp,min,max,in
 #import data, create variables, subset by age
 ################### import/merge ####
 #starting with full dataset - moderate/severe diarrhea
-gems1_orig <- read.csv("", header=T)
+gems1_orig <- read.csv("gems1.csv", header=T)
 
 cases <- gems1_orig %>% filter(type=="Case")
 
@@ -257,7 +257,7 @@ cases=cases %>% select(site,	type, caseid, f3_gender,	f3_drh_turgor	,	f3_drh_iv	
 
 #drop the extra 1 at the end of each caseid
 cases$caseid <- as.numeric(substr(cases$caseid,1,9))
-AFes <- read.csv("", header=T)
+AFes <- read.csv("GEMS with AFes.csv", header=T)
 #is no data here for controls, so just drop those
 AFes <- AFes %>% filter(case.control==1)
 cases <- cases %>% inner_join(AFes, by=c("caseid"="Case.ID")) #only want cases that have AFes
@@ -265,8 +265,6 @@ cases <- cases %>% inner_join(AFes, by=c("caseid"="Case.ID")) #only want cases t
 #AFes is Case.ID, 9 digits long
 
 ################### define variables ####
-#create outcome variables
-
 #create binary etiology variables
 #has to be a more elegant way of doing this
 cases$astro <- cases$astrovirus_afe
@@ -301,34 +299,6 @@ cases <- cases %>% rename_with(~paste0(., "_afe0.5"), astro:STEC) %>%
                         shigella_afe0.7 = ifelse(shigella_eiec_afe>=0.7,1,0),
                         cholera_afe0.3 = ifelse(v_cholerae_afe>=0.3,1,0),
                         cholera_afe0.7 = ifelse(v_cholerae_afe>=0.7,1,0))
-
-# cases <- cases %>% mutate(ben1=(case_when((shigella==1 | cholera==1)~1,TRUE~0)),
-#                          ben4=(case_when((shigella==1 | cholera==1 | campy==1)~1,TRUE~0)),
-#                          ben2=(case_when((shigella==1 | cholera==1 | campy==1 |
-#                                             ST_ETEC==1)~1,TRUE~0)), #no Plesimonas, Yersinia in data; EAEC, LT_ETEC too few
-#                          # ben4=(case_when((shigella==1 | cholera==1 | campy==1 | 
-#                          #                    ST_ETEC==1 | LT_ETEC_afe>=0.5 | TEPEC_afe>=0.5)~1,TRUE~0)), #too few LT_ETEC, TEPEC, same as ben2
-#                          # prot=(case_when((crypto==1 | cyclo==1)~1,TRUE~0)), #no giardia in data, too few cyclo, so just crypto
-#                          ben3=(case_when((shigella==1 | cholera==1 | campy==1 |
-#                                             crypto==1)~1,TRUE~0)) #no giardia in data, too few cyclo in data.
-#                          # harm1=(case_when((salm==1 | STEC_afe>=0.5)~1,TRUE~0)), #too few STEC, no EHEC in data, so just salm
-#                          )
-# cbind(test$ben1,cases$shigella_eiec_afe,test$v_cholerae_afe)[1:50,]
-#old versions:
-# cases <- cases %>% mutate(ben1=(case_when((shigella_eiec_afe>=0.5 | v_cholerae_afe>=0.5)~1,TRUE~0)),
-#                           ben2=(case_when((shigella_eiec_afe>=0.5 | v_cholerae_afe>=0.5 |
-#                                              EAEC_afe>=0.5 | ST_ETEC_afe | LT_ETEC_afe)~1,TRUE~0)), #no campy, Plesimonas, Yersinia?
-#                           #both ST- and LT-ETEC?
-#                           ben4=(case_when((shigella_eiec_afe>=0.5 | v_cholerae_afe>=0.5 | c_jejuni_coli_afe>=0.5 | #per 14Apr21 Daniel convo for ASTMH abstract
-#                                              ST_ETEC_afe>=0.5 | LT_ETEC_afe>=0.5 | TEPEC_afe>=0.5)~1,TRUE~0)),
-#                           ben3=(case_when((shigella_eiec_afe>=0.5 | v_cholerae_afe>=0.5 |
-#                                              cryptosporidium_afe>=0.5 | cyclospora_afe>=0.5)~1,TRUE~0)),
-#                           
-#                           prot=(case_when((cryptosporidium_afe>=0.5 | cyclospora_afe>=0.5)~1,TRUE~0)), #no giardia?
-#                           
-#                           salm=(case_when((salmonella_afe>=0.5)~1,TRUE~0)),
-#                           STEC=(case_when((STEC_afe>=0.5)~1,TRUE~0)),
-#                           harm1=(case_when((salmonella_afe>=0.5 | STEC_afe>=0.5)~1,TRUE~0)), #no EHEC?
 
 cases$f4b_date_date <- as.Date(as.character(cases$f4b_date))
 cases$f5_date_date <- as.Date(as.character(cases$f5_date))
@@ -538,6 +508,8 @@ names <- c("f3_gender","f3_drh_turgor","f3_drh_iv","f3_drh_hosp",
            "base_age"
 )
 
+#save(cases, file = "")
+
 ################### into age groups, continents, cholera site, bloody ####
 #into age groups
 table(cases$agegroup)
@@ -555,6 +527,10 @@ Kenya <- cases %>% filter(site == "Kenya")
 India <- cases %>% filter(site == "India")
 Bdesh <- cases %>% filter(site == "Bangladesh")
 Pak <- cases %>% filter(site == "Pakistan")
+
+Afr <- cases %>% filter(site=="The Gambia" | site=="Mali" | site=="Mozambique" | site=="Kenya")
+Asia <- cases %>% filter(site=="India" | site=="Pakistan" | site=="Bangladesh")
+Asia.noBdesh <- cases %>% filter(site=="India" | site=="Pakistan")
 
 cases.cholera <- cases %>% filter(site=="Bangladesh" | site=="India" | site=="Mozambique" | site=="Pakistan")
 cases.noncholera <- cases %>% filter(site=="Kenya" | site=="Mali" | site=="The Gambia")
@@ -608,7 +584,7 @@ p1 <- hist(cases[which(cases$shigella_afe0.5==0),]$base_age,freq=F)
 p2 <- hist(cases[which(cases$shigella_afe0.5==1),]$base_age,freq=F)
 p3 <- hist(data_MALED[which(data_MALED$shigella_afe0.5==0),]$base_age,freq=F)
 p4 <- hist(data_MALED[which(data_MALED$shigella_afe0.5==1),]$base_age,freq=F)
-#jpeg("")
+#jpeg("overlap_hist_age_shigella.jpg",width=480,height=480,quality=400)
 par(mfrow=c(2,1))
 plot( p1, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,0.1),freq=F,xlab="Age (months)",main="Shigella etiology by age in GEMS")
 plot( p2, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,0.1),freq=F, add=T)
@@ -617,6 +593,17 @@ plot( p3, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,0.1),freq=F,xlab="Age (month
 plot( p4, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,0.1),freq=F, add=T)
 legend('topright',c('no Shigella','Shigella'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
 dev.off()
+#non-overlaping version for R2
+#jpeg("overlap_hist_age_shigella_unoverlap.jpg",width=480,height=480,quality=400)
+par(mfcol=c(2,2))
+plot( p1, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,1200),freq=T,xlab="Age (months)",main="Non-Shigella etiology by age in GEMS")
+plot( p2, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,400),freq=T, add=F,xlab="Age (months)",main="Shigella etiology by age in GEMS")
+#legend('topright',c('no Shigella','Shigella'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
+plot( p3, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,175),freq=T,xlab="Age (months)",main="Non-Shigella etiology by age in MAL-ED")
+plot( p4, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,50),freq=T, add=F,xlab="Age (months)",main="Shigella etiology by age in MAL-ED")
+#legend('topright',c('no Shigella','Shigella'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
+dev.off()
+
 
 table(cases$shigella_afe0.5)
 table(cases$shigella_afe0.5,cases$f4a_drh_blood)
@@ -625,7 +612,7 @@ p1 <- hist(cases[which(cases$f4a_drh_blood==0),]$base_age,freq=F)
 p2 <- hist(cases[which(cases$f4a_drh_blood==1),]$base_age,freq=F)
 p3 <- hist(data_MALED[which(data_MALED$f4a_drh_blood==0),]$base_age,freq=F)
 p4 <- hist(data_MALED[which(data_MALED$f4a_drh_blood==1),]$base_age,freq=F)
-#jpeg("")
+#jpeg("overlap_hist_ageBD.jpg",width=480,height=480,quality=400)
 par(mfrow=c(2,1))
 plot( p1, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,0.1),freq=F,xlab="Age (months)",main="Dystentery (bloody diarrhea) by age in GEMS")
 plot( p2, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,0.1),freq=F, add=T)
@@ -634,6 +621,17 @@ plot( p3, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,0.1),freq=F,xlab="Age (month
 plot( p4, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,0.1),freq=F, add=T)
 legend('topright',c('no dysentery','dysentery'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
 dev.off()
+#non-overlaping version for R2
+#jpeg("overlap_hist_ageBD_unoverlap.jpg",width=480,height=480,quality=400)
+par(mfcol=c(2,2))
+plot( p1, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,1000),freq=T,xlab="Age (months)",main="No Dystentery (bloody diarrhea) \nby age in GEMS")
+plot( p2, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,250),freq=T, add=F,xlab="Age (months)",main="Dystentery (bloody diarrhea) \nby age in GEMS")
+#legend('topright',c('no Shigella','Shigella'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
+plot( p3, col=rgb(1,0,0,1/4), xlim=c(0,60),ylim=c(0,175),freq=T,xlab="Age (months)",main="No Dystentery (bloody diarrhea) \nby age in MAL-ED")
+plot( p4, col=rgb(0,0,1,1/4),  xlim=c(0,60),ylim=c(0,20),freq=T, add=F,xlab="Age (months)",main="Dystentery (bloody diarrhea) \nby age in MAL-ED")
+#legend('topright',c('no Shigella','Shigella'),fill = c(rgb(1,0,0,1/4),rgb(0,0,1,1/4)), bty = 'n')
+dev.off()
+
 
 set.seed(11)
 p1 <- hist(rnorm(100, mean=0.3, sd=0.1), freq=F)
@@ -652,7 +650,8 @@ dev.off()
 names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
 names <- names[!names %in% c("f4b_haz")] #take HAZ off list
 
-shigella0.5MUAC <- CPR.funct(data=cases,outcome="shigella_afe0.5",iter=100,nvars_opts=c(1:10,15,20,30,40,50))
+shigella0.5MUAC <- CPR.funct(data=cases,outcome="shigella_afe0.5",iter=10,nvars_opts=c(1:10,15,20,30,40,50))
+#save(shigella0.5MUAC, file = "shigella0.5MUAC_10iter.Rdata")
 shigella0.5MUAC[["df_imps"]]
 shigella0.5MUAC[["AUC_df"]]
 shigella0.5MUAC[["calib"]]
@@ -919,20 +918,20 @@ str(CV.roc.data.ShigellaMUAC)
 #save(CV.roc.data.ShigellaMUAC, file = "")
 
 
-#load(file = "")
+#load(file = "ShigellaMUAC_CV.roc.data.Rdata")
 #(there's a better way to do this as a list...)
 CV.roc.data.Shig.2 <- CV.roc.data.ShigellaMUAC$Shig.2
 CV.roc.data.Shig.5 <- CV.roc.data.ShigellaMUAC$Shig.5
 CV.roc.data.Shig.10 <- CV.roc.data.ShigellaMUAC$Shig.10
 
 #Plot CV AUC a single line of the averaged cross-validated ROC curve
-#jpeg("",width=480,height=480,quality=400)
+#tiff("ShigellaMUAC_roc.tif",units="px",width=2000,height=2000,res=300)
 plot(CV.roc.data.Shig.2$perf, avg="vertical", main="Cross-validated ROC Curves for Shigella",
      col="#1c61b6", lwd=2, lty=1) 
 plot(CV.roc.data.Shig.5$perf, avg="vertical", col="#1c61b6", lwd=2, lty=2, add=TRUE) 
 plot(CV.roc.data.Shig.10$perf, avg="vertical", col="#1c61b6", lwd=2, lty=3, add=TRUE) 
 legend("bottomright", 
-       legend = c("2-var","5-var","10-var"), 
+       legend = c("2-predictors","5-predictors","10-predictors"), 
        col = c("#1c61b6"),
        lty = c(1,2,3),
        lwd = 2)
@@ -979,7 +978,7 @@ dev.off()
 ####################
 #MAL-ED: dataset including etiology 
 ################### import data, define variables ####
-load(file = "")
+load(file = "maled_tac_sadl.Rdata")
 #looks like this is one observation per stool sample, including samples taken at diarrhea episode and monthly surveillance
 
 temp1 <- maled_tac %>% filter(stooltype=="D1") %>% #now only stool samples from diarrhea episodes
@@ -1107,6 +1106,8 @@ paste(round(GEMS_AUC$auc,2)," (",
 GEMS_decilesCC <- GEMS_2var %>% mutate(decile_glm=ntile(pred_glm,10)) %>%
   group_by(decile_glm) %>% summarize(mean(shigella_afe0.5),mean(pred_glm))
 #save(GEMS_decilesCC, file = "")
+#load(file = "ShigellaMUAC_GEMS059_decilesCC.Rdata")
+
 
 data_MALED$GEMS_pred_glm <- as.numeric(predict(GEMS_glm_shigella,newdata=data_MALED,type="response"))
 MALED_AUC <- AUC(predictions=data_MALED$GEMS_pred_glm,labels=data_MALED$shigella_afe0.5)
@@ -1121,8 +1122,11 @@ paste(round(MALED_AUC$auc,2)," (",
 MALED_decilesCC <- data_MALED %>% mutate(decile_glm=ntile(GEMS_pred_glm,10)) %>%
   group_by(decile_glm) %>% summarize(mean(shigella_afe0.5),mean(GEMS_pred_glm))
 #save(MALED_decilesCC, file = "")
+#load(file = "ShigellaMUAC_MALED_decilesCC_059.Rdata")
+
 
 #jpeg("",width=600,height=480,quality=100)
+#tiff("ShigellaMUAC_CC_ExternalVal_GEMS059.tif",units="px",width=2400,height=1920,res=300)
 plot(x=seq(0,1,by=0.1),y=seq(0,1,by=0.1),type="l",
      xlab="Predicted Probability",ylab="Observed Proportion",
      main=expression(paste("Calibration Curve: Shigella AFe0.5")),
@@ -1163,11 +1167,16 @@ summary(shigella[["glm"]])
 shigella[["results"]]
 results<-shigella[["results"]]
 results_dysentery<-shigella[["blood"]]
+#save(shigella, file = "Shigella_GEMS059_SeSpFPRFNR_POC0.90.0_MALED.Rdata")
+#load(file = "Shigella_GEMS059_SeSpFPRFNR_POC0.90.0_MALED.Rdata")
+
 
 #how few need testing before start doing better than dysentery-only regimen
 shigella[["blood"]]
 # TN.bld  TP.bld  FN.bld  FP.bld  Se.bld  Sp.bld PPV.bld NPV.bld FPR.bld FNR.bld 
 # 1067.00   26.00  120.00   46.00    0.18    0.96    0.36    0.90    0.04    0.82 
+# TN.bld  TP.bld  FN.bld  FP.bld  Se.bld  Sp.bld PPV.bld NPV.bld FPR.bld FNR.bld 
+# 1066.00   27.00  118.00   48.00    0.19    0.96    0.36    0.90    0.04    0.81 
 temp <- results[which(results$Se>=0.18),]
 
 
@@ -1177,7 +1186,7 @@ temp <- results[which(results$Se>=0.18),]
 #   f4a_drh_blood1  2.254699   0.076578   29.44   <2e-16 ***
 
 colors <- c("Se"="#7b3294", "Sp"="#c2a5cf", "FNR"="#008837", "FPR"="#a6dba0")
-#jpeg("",width=600,height=480)
+#tiff("Shigella_GEMS059_SeSpFPRFNR_POC0.90.9_MALED.tif",units="px",width=2400,height=1920,res=300)
 ggplot(shigella[["results"]], aes(x=prop.tested)) + 
   theme_bw() + ylim(0,1) +
   ggtitle("Accuracy of Clinical Prediction Rule (CPR)-Guided Testing for Shigella \n point-of-care Se=0.90; point-of-care Sp=0.90 \n Derived in GEMS 0-59mo, assessed in MALED 0-23mo") +
@@ -1189,18 +1198,41 @@ ggplot(shigella[["results"]], aes(x=prop.tested)) +
   geom_hline(yintercept=shigella[["blood"]][["Sp.bld"]], linetype="dashed",color="#c2a5cf",size=1.1) +
   geom_hline(yintercept=shigella[["blood"]][["FNR.bld"]], linetype="dashed",color="#008837",size=1.1) +
   geom_hline(yintercept=shigella[["blood"]][["FPR.bld"]], linetype="dashed",color="#a6dba0",size=1.1) +
-  labs(x="Proportion Tested",y="Test Accuracy")+
-  scale_color_manual(name="Legend",
+  labs(x="Proportion Receiving POC Diagnostic Test",y="Diagnostic Regimen Accuracy")+
+  scale_color_manual(name=NULL,
                      breaks=c("Se", "Sp", "FNR", "FPR"),
                      values=c("Se"="#7b3294", "Sp"="#c2a5cf", "FNR"="#008837", "FPR"="#a6dba0"),
                      guide = guide_legend(override.aes = list(size = 5))) +
   scale_alpha_manual(name = NULL,
+                     labels = c("CPR regimen", "dysentery regimen"),
                      values = c(1, 1),
                      breaks = c("CPR-derived", "BD-derived"),
                      guide = guide_legend(override.aes = list(linetype = c(1, 3),
                                                               shape = c(NA, NA),
                                                               color = "black")))
 dev.off()
+
+glm<-glm(shigella_afe0.5~base_age+f4a_drh_blood, data=cases, family="binomial")
+summary(glm)
+# Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)    -2.516451   0.076900  -32.72   <2e-16 ***
+#   base_age        0.038278   0.002761   13.87   <2e-16 ***
+#   f4a_drh_blood1  2.254699   0.076578   29.44   <2e-16 ***
+
+#example of each possible kid
+representative=data.frame(base_age=c(seq(from=0,to=24,1),seq(from=0,to=24,1)),
+                          f4a_drh_blood=as.factor(c(rep(0,25),rep(1,25))))
+representative
+str(representative)
+representative$predicted <- predict(glm, newdata=representative, type="response")
+representative$test <- ifelse(representative$predicted<0.13 | representative$predicted>0.55, 0,
+                              1)
+representative
+representative.ordered<-representative[order(representative$base_age,representative$f4a_drh_blood),]
+write.csv(representative.ordered, file = "representative.ordered.csv")
+
+
+
 
 ################### shigella overlapping histograms of predicted probabilities ####
 val_data<-shigella[["val_data"]]
@@ -1255,12 +1287,13 @@ GEMS_decilesCC <- GEMS_2var %>% mutate(decile_glm=ntile(pred_glm,10)) %>%
 data_MALED$GEMS_pred_glm <- as.numeric(predict(GEMS_glm_shigella,newdata=data_MALED,type="response"))
 MALED_AUC <- AUC(predictions=data_MALED$GEMS_pred_glm,labels=data_MALED$shigella_afe0.5)
 MALED_AUC
-# [1] 0.772871
+# [1] 0.7990255
 MALED_AUC <- roc(response=data_MALED$shigella_afe0.5,predictor=data_MALED$GEMS_pred_glm)
 paste(round(MALED_AUC$auc,2)," (",
       round(ci.auc(MALED_AUC)[1],2),", ",
       round(ci.auc(MALED_AUC)[3],2),")",sep="")
 # "0.77 (0.74, 0.81)"
+# "0.8 (0.77, 0.83)"
 
 MALED_decilesCC <- data_MALED %>% mutate(decile_glm=ntile(GEMS_pred_glm,10)) %>%
   group_by(decile_glm) %>% summarize(mean(shigella_afe0.5),mean(GEMS_pred_glm))
@@ -1339,6 +1372,8 @@ ggplot(shigella[["results"]], aes(x=prop.tested)) +
                                                               color = "black")))
 dev.off()
 
+####################
+#additional GEMS sensitivity analyses 
 ####################
 #shigella AFe>=0.5 only HAZ
 ################### var screening, AUC ####
@@ -1975,6 +2010,166 @@ shigella0.5MUAC.1223[["calib"]]
 #   1     2 -0.00590   -0.261    0.243 0.985     0.753      1.23
 # 2     5 -0.00630   -0.263    0.244 0.971     0.743      1.21
 # 3    10 -0.00619   -0.267    0.249 0.937     0.721      1.17
+
+####################
+#shigella AFe>=0.5 0-23mo
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac"))
+names <- names[!names %in% c("f4b_haz")]
+
+shigella0.5MUAC.023 <- CPR.funct(data=cases_age4,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.023[["df_imps"]]
+shigella0.5MUAC.023[["AUC_df"]]
+shigella0.5MUAC.023[["calib"]]
+
+# names     var_red
+# 1               base_age 58.62760983
+# 2          f4a_drh_blood 42.34691644
+# 3               f4b_resp 21.20085135
+# 4               f4b_muac 20.39777531
+# 5               f4b_temp 17.94649443
+# 6          f4a_ppl_house 15.64660340
+# 7               f4b_eyes 11.17708525
+# 8          f4a_breastfed 10.74931269
+# 9           f4a_drh_days 10.68773754
+# 10         f4a_slp_rooms  9.77928162
+# 11                  site  9.01339170
+# 12         f4a_share_fac  8.92239198
+# 13      f4a_yng_children  7.72530541
+# 14         f4a_prim_schl  7.56203840
+# 15        f4a_drh_strain  7.49885884
+# 16         f4a_drh_vomit  7.07472039
+# 17        f4a_max_stools  6.16676330
+# 18        f4a_offr_drink  5.94462482
+# 19         f4b_recommend  5.92667987
+# 20         f4a_fac_waste  4.92263940
+# 21             f4b_mouth  4.85121637
+# 22       f4a_water_avail  4.60820200
+# 23          f4a_dad_live  4.47447670
+# 24     f4a_drh_bellypain  4.26483857
+# 25          f4a_ms_water  4.24084452
+# 26        f4a_disp_feces  4.23868974
+# 27        f4a_fuel_grass  4.17728072
+# 28        f4a_trt_method  4.14958236
+# 29         f4a_drh_cough  3.91182605
+# 30      f4a_cur_drymouth  3.78278312
+# 31        f4a_drh_thirst  3.72201526
+# 32       f4a_hometrt_ors  3.41018650
+# 33        f4a_wash_child  3.40037903
+# 34             f3_gender  3.39451872
+# 35       f4a_cur_thirsty  3.36067215
+# 36       f4a_store_water  3.32818336
+# 37          f4a_wash_use  3.29729137
+# 38         f4a_wash_cook  3.23144490
+# 39      f4a_hometrt_none  3.23072543
+# 40              f4b_skin  3.16610418
+# 41            f4b_mental  3.16073579
+# 42         f4a_fuel_crop  3.13218536
+# 43        f4a_house_bike  3.08408355
+# 44        f4a_wash_nurse  3.06867227
+# 45  f4a_drh_lethrgy_miss  3.04727415
+# 46      f4a_seek_outside  3.00483999
+# 47          f4a_ani_fowl  2.99630325
+# 48      f4a_cur_restless  2.97914474
+# 49      f4a_drh_restless  2.96724721
+# 50          f4a_wash_def  2.96125415
+# 51        f4a_house_tele  2.94902411
+# 52         f4a_fuel_wood  2.90472400
+# 53       f4a_house_phone  2.83175207
+# 54             f4b_admit  2.80227130
+# 55             f4a_floor  2.79719630
+# 56          f4a_wash_eat  2.77642625
+# 57           f4a_ani_cat  2.74019705
+# 58       f4a_house_scoot  2.73620118
+# 59          f4a_cur_skin  2.71086896
+# 60           f4a_ani_dog  2.65434652
+# 61    f4a_cur_fastbreath  2.62210695
+# 62       f4a_house_radio  2.61673673
+# 63      f4a_house_agland  2.61146181
+# 64       f4a_ani_rodents  2.59443473
+# 65           f3_drh_hosp  2.54434498
+# 66           f4a_ani_cow  2.53132981
+# 67      f4a_house_fridge  2.45947211
+# 68       f4a_fuel_natgas  2.45835383
+# 69        f4a_house_elec  2.45077269
+# 70          f4a_ani_goat  2.43201401
+# 71     f4a_fuel_charcoal  2.42252340
+# 72             f3_drh_iv  2.38890295
+# 73         f4a_trt_water  2.37511916
+# 74     f4a_hometrt_othr1  2.34387734
+# 75        f4b_under_nutr  2.32501445
+# 76     f4a_hometrt_maize  2.30395035
+# 77        f4a_seek_pharm  2.29699719
+# 78         f3_drh_turgor  2.22822408
+# 79      f4a_water_pubtap  2.22414769
+# 80      f4a_relationship  2.10543528
+# 81     f4a_drh_lessdrink  2.02066572
+# 82    f4a_water_deepwell  2.01653821
+# 83         f4a_wash_othr  1.99624645
+# 84       f4a_wash_animal  1.95903140
+# 85            f4a_ani_no  1.94811232
+# 86        f4a_hometrt_ab  1.89259641
+# 87         f4a_fuel_dung  1.81064363
+# 88      f4a_hometrt_herb  1.73991771
+# 89       f4a_water_house  1.72554886
+# 90         f4a_ani_other  1.71922205
+# 91         f4a_ani_sheep  1.67194257
+# 92         f4a_house_car  1.53652649
+# 93        f4a_water_yard  1.51186518
+# 94        f4a_house_cart  1.48682837
+# 95      f4a_water_bought  1.46752918
+# 96      f4a_hometrt_zinc  1.32421288
+# 97       f4a_seek_healer  1.31738232
+# 98         f4a_fuel_kero  1.30914612
+# 99     f4a_water_pubwell  1.28329081
+# 100  f4a_water_shallwell  1.26051730
+# 101         f4b_abn_hair  1.16362664
+# 102     f4a_seek_privdoc  1.15082940
+# 103       f4a_house_none  1.07671591
+# 104       f4a_water_bore  1.06554289
+# 105       f4a_seek_remdy  1.00719558
+# 106     f4a_hometrt_milk  0.98636027
+# 107       f4a_fuel_other  0.94595453
+# 108         f4a_seek_doc  0.93541513
+# 109         f4a_drh_conv  0.91908083
+# 110      f4b_chest_indrw  0.88413111
+# 111     f4a_fuel_propane  0.86343584
+# 112    f4a_water_covwell  0.84660340
+# 113       f4a_water_well  0.83528171
+# 114    f4a_hometrt_othr2  0.83449694
+# 115       f4a_water_rain  0.80305463
+# 116       f4b_skin_flaky  0.77818889
+# 117        f4a_drh_consc  0.71886096
+# 118     f4a_drh_prolapse  0.69916965
+# 119        f4a_fuel_coal  0.63013736
+# 120       f4a_house_boat  0.57599572
+# 121  f4a_hometrt_othrliq  0.51981292
+# 122       f4a_water_othr  0.51393396
+# 123      f4a_water_river  0.49412405
+# 124      f4a_fuel_biogas  0.47575032
+# 125   f4a_water_covpwell  0.45696884
+# 126       f4a_seek_other  0.45144645
+# 127        f4a_fuel_elec  0.42278766
+# 128           f4b_rectal  0.35331843
+# 129          f4b_bipedal  0.34757069
+# 130       f4a_water_pond  0.29536788
+# 131      f4a_seek_friend  0.23181194
+# 132   f4a_water_unspring  0.14555465
+# 133  f4a_water_prospring  0.03086628
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.8199190 0.001986181 0.8160261 0.8238118  0.95    LR    2
+# 2 0.8216321 0.001901198 0.8179058 0.8253584  0.95    LR    5
+# 3 0.8266144 0.001870984 0.8229473 0.8302815  0.95    LR   10
+# 4 0.8127537 0.002038897 0.8087575 0.8167499  0.95    RF    2
+# 5 0.8092479 0.002004396 0.8053193 0.8131764  0.95    RF    5
+# 6 0.8301809 0.001869511 0.8265168 0.8338451  0.95    RF   10
+
+# nvar      intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>     <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.00187    -0.214    0.204 1.02      0.847      1.20
+# 2     5 -0.00151    -0.214    0.206 1.01      0.843      1.19
+# 3    10 -0.000706   -0.215    0.208 0.999     0.834      1.18
 
 ####################
 #shigella AFe>=0.5 24-59mo
@@ -3263,4 +3458,1531 @@ shigella0.5MUAC.season[["calib"]]
 #   1     2 0.00528   -0.158    0.166 1.00      0.863      1.14
 # 2     5 0.00450   -0.160    0.166 0.994     0.858      1.14
 # 3    10 0.00598   -0.160    0.169 0.986     0.852      1.13
+
+####################
+#shigella AFe>=0.5 only MUAC Gambia only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+summary(Gambia$f4b_recommend)
+Gambia_complete <- Gambia %>% filter(f4b_recommend!=2 & f4b_recommend!=3)
+summary(Gambia_complete$f4b_recommend)
+
+shigella0.5MUAC.Gambia <- CPR.funct(data=Gambia_complete,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Gambia[["df_imps"]]
+shigella0.5MUAC.Gambia[["AUC_df"]]
+shigella0.5MUAC.Gambia[["calib"]]
+
+# names      var_red
+# 1          f4a_drh_blood 1.131027e+01
+# 2               base_age 7.561273e+00
+# 3               f4b_muac 4.423404e+00
+# 4          f4a_ppl_house 4.275836e+00
+# 5               f4b_resp 4.021998e+00
+# 6               f4b_temp 3.688919e+00
+# 7          f4a_slp_rooms 2.990772e+00
+# 8       f4a_yng_children 2.483914e+00
+# 9               f4b_eyes 2.433228e+00
+# 10         f4b_recommend 2.388908e+00
+# 11          f4a_drh_days 2.237372e+00
+# 12        f4a_offr_drink 1.994945e+00
+# 13        f4a_drh_strain 1.667715e+00
+# 14         f4a_breastfed 1.627909e+00
+# 15         f4a_drh_vomit 1.256424e+00
+# 16          f4a_dad_live 1.172836e+00
+# 17          f4a_ms_water 1.150703e+00
+# 18             f4b_mouth 1.112269e+00
+# 19         f4a_prim_schl 1.094145e+00
+# 20       f4a_water_avail 1.033758e+00
+# 21              f4b_skin 9.220463e-01
+# 22      f4a_hometrt_none 8.149884e-01
+# 23         f4a_drh_cough 8.145235e-01
+# 24     f4a_drh_bellypain 8.095507e-01
+# 25         f4a_ani_other 7.946037e-01
+# 26        f4a_wash_child 7.783255e-01
+# 27        f4a_max_stools 7.780915e-01
+# 28          f4a_ani_goat 7.706920e-01
+# 29  f4a_drh_lethrgy_miss 7.472377e-01
+# 30        f4a_wash_nurse 7.191540e-01
+# 31      f4a_drh_restless 7.148776e-01
+# 32         f4a_house_car 7.145207e-01
+# 33          f4a_wash_def 7.092625e-01
+# 34     f4a_water_pubwell 6.992615e-01
+# 35         f4a_wash_cook 6.930506e-01
+# 36             f3_gender 6.885352e-01
+# 37      f4a_cur_drymouth 6.836483e-01
+# 38       f4a_cur_thirsty 6.829579e-01
+# 39           f4a_ani_dog 6.827154e-01
+# 40      f4a_water_pubtap 6.745814e-01
+# 41         f4a_trt_water 6.642383e-01
+# 42        f4a_drh_thirst 6.547712e-01
+# 43       f4a_ani_rodents 6.481016e-01
+# 44          f4a_wash_use 6.309852e-01
+# 45           f4a_ani_cow 6.264302e-01
+# 46        f4a_trt_method 6.256436e-01
+# 47         f4a_share_fac 6.233195e-01
+# 48    f4a_cur_fastbreath 6.222193e-01
+# 49           f4a_ani_cat 5.992938e-01
+# 50     f4a_hometrt_maize 5.900121e-01
+# 51       f4a_house_scoot 5.864444e-01
+# 52            f4b_mental 5.823919e-01
+# 53       f4a_store_water 5.705545e-01
+# 54        f4a_house_tele 5.659718e-01
+# 55        f4a_house_elec 5.643208e-01
+# 56          f4a_cur_skin 5.544361e-01
+# 57         f4a_fac_waste 5.337936e-01
+# 58         f4a_ani_sheep 5.277502e-01
+# 59      f4a_cur_restless 5.268483e-01
+# 60             f3_drh_iv 5.207144e-01
+# 61     f4a_drh_lessdrink 5.170350e-01
+# 62      f4a_house_agland 5.095124e-01
+# 63         f3_drh_turgor 5.065955e-01
+# 64      f4a_house_fridge 5.057024e-01
+# 65           f3_drh_hosp 5.025558e-01
+# 66        f4a_water_yard 4.993523e-01
+# 67      f4a_hometrt_herb 4.974813e-01
+# 68        f4a_hometrt_ab 4.935845e-01
+# 69             f4b_admit 4.927744e-01
+# 70        f4b_under_nutr 4.752115e-01
+# 71     f4a_hometrt_othr1 4.722977e-01
+# 72    f4a_water_deepwell 4.653252e-01
+# 73        f4a_house_bike 4.531512e-01
+# 74             f4a_floor 4.386000e-01
+# 75        f4a_house_cart 4.322310e-01
+# 76          f4a_ani_fowl 4.129849e-01
+# 77        f4a_seek_pharm 4.093354e-01
+# 78        f4a_water_well 3.979474e-01
+# 79      f4a_seek_outside 3.800646e-01
+# 80      f4a_relationship 3.186331e-01
+# 81       f4a_hometrt_ors 2.941194e-01
+# 82       f4a_wash_animal 2.803570e-01
+# 83        f4b_skin_flaky 2.776176e-01
+# 84          f4b_abn_hair 2.575490e-01
+# 85          f4a_drh_conv 2.528080e-01
+# 86       f4a_house_phone 2.463488e-01
+# 87        f4a_water_othr 2.341670e-01
+# 88     f4a_fuel_charcoal 2.291105e-01
+# 89       f4a_house_radio 2.246577e-01
+# 90         f4a_fuel_wood 2.095956e-01
+# 91    f4a_water_covpwell 2.072847e-01
+# 92         f4a_wash_othr 2.070791e-01
+# 93       f4a_seek_healer 2.044898e-01
+# 94     f4a_hometrt_othr2 2.024120e-01
+# 95        f4a_disp_feces 1.929627e-01
+# 96          f4a_wash_eat 1.907069e-01
+# 97       f4b_chest_indrw 1.818974e-01
+# 98     f4a_water_covwell 1.818126e-01
+# 99   f4a_hometrt_othrliq 1.654484e-01
+# 100       f4a_seek_remdy 1.416206e-01
+# 101      f4a_seek_friend 1.242310e-01
+# 102       f4a_water_bore 1.148825e-01
+# 103     f4a_drh_prolapse 1.077459e-01
+# 104        f4a_fuel_coal 8.431875e-02
+# 105           f4a_ani_no 8.380848e-02
+# 106           f4b_rectal 6.875105e-02
+# 107         f4a_seek_doc 6.189284e-02
+# 108     f4a_hometrt_milk 4.787203e-02
+# 109        f4a_drh_consc 3.700233e-02
+# 110      f4a_water_house 1.933168e-02
+# 111       f4a_seek_other 1.621570e-02
+# 112     f4a_seek_privdoc 1.261830e-02
+# 113          f4b_bipedal 1.235621e-02
+# 114  f4a_water_shallwell 3.585400e-03
+# 115       f4a_water_pond 3.018954e-03
+# 116       f4a_fuel_other 2.038095e-03
+# 117       f4a_house_none 1.405830e-03
+# 118       f4a_water_rain 7.500000e-04
+# 119     f4a_hometrt_zinc 4.450549e-04
+# 120                 site 0.000000e+00
+# 121       f4a_house_boat 0.000000e+00
+# 122        f4a_fuel_elec 0.000000e+00
+# 123      f4a_fuel_biogas 0.000000e+00
+# 124       f4a_fuel_grass 0.000000e+00
+# 125     f4a_fuel_propane 0.000000e+00
+# 126        f4a_fuel_dung 0.000000e+00
+# 127      f4a_fuel_natgas 0.000000e+00
+# 128        f4a_fuel_crop 0.000000e+00
+# 129        f4a_fuel_kero 0.000000e+00
+# 130  f4a_water_prospring 0.000000e+00
+# 131   f4a_water_unspring 0.000000e+00
+# 132      f4a_water_river 0.000000e+00
+# 133     f4a_water_bought 0.000000e+00
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.7781132 0.004697605 0.7689060 0.7873203  0.95    LR    2
+# 2 0.7744907 0.004948161 0.7647925 0.7841889  0.95    LR    5
+# 3 0.7779051 0.004958946 0.7681858 0.7876245  0.95    LR   10
+# 4 0.8185335 0.004330090 0.8100467 0.8270203  0.95    RF    2
+# 5 0.8076314 0.004246390 0.7993086 0.8159541  0.95    RF    5
+# 6 0.8103131 0.004319644 0.8018467 0.8187794  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.0229   -0.498    0.423 1.02      0.609      1.47
+# 2     5 -0.0248   -0.507    0.428 0.993     0.598      1.43
+# 3    10 -0.0227   -0.515    0.440 0.908     0.543      1.32
+
+
+####################
+#shigella AFe>=0.5 only MUAC Mali only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+summary(Mali$f4a_prim_schl)
+Mali_complete <- Mali
+Mali_complete$f4a_prim_schl <- as.factor(ifelse(Mali_complete$f4a_prim_schl==5,4,Mali_complete$f4a_prim_schl))
+summary(Mali_complete$f4a_prim_schl)
+
+shigella0.5MUAC.Mali <- CPR.funct(data=Mali_complete,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Mali[["df_imps"]]
+shigella0.5MUAC.Mali[["AUC_df"]]
+shigella0.5MUAC.Mali[["calib"]]
+
+# names      var_red
+# 1               base_age 7.9963285826
+# 2               f4b_muac 5.6872058575
+# 3               f4b_resp 5.4093202487
+# 4               f4b_temp 5.2787194071
+# 5          f4a_ppl_house 4.4563067868
+# 6          f4a_slp_rooms 3.2877691626
+# 7       f4a_yng_children 2.7648506286
+# 8           f4a_drh_days 2.6712308952
+# 9          f4a_share_fac 2.3482474022
+# 10         f4a_prim_schl 1.9438191402
+# 11         f4a_breastfed 1.7686784104
+# 12         f4a_drh_blood 1.6782066927
+# 13        f4a_offr_drink 1.4007542517
+# 14          f4a_dad_live 1.3419060923
+# 15      f4a_relationship 1.1949869658
+# 16         f4a_drh_vomit 1.1292056713
+# 17      f4a_cur_drymouth 1.1132143827
+# 18        f4a_max_stools 1.0403446884
+# 19        f4a_house_bike 1.0232523637
+# 20              f4b_eyes 1.0086475560
+# 21             f4b_mouth 0.9848196157
+# 22          f4a_ani_fowl 0.9431115206
+# 23             f3_gender 0.9349261508
+# 24          f4a_ms_water 0.9207318760
+# 25         f4a_drh_cough 0.9054621319
+# 26         f4a_wash_cook 0.9033641525
+# 27        f4a_wash_nurse 0.8941305872
+# 28        f4a_wash_child 0.8901197288
+# 29         f4a_fuel_wood 0.8812309618
+# 30      f4a_hometrt_none 0.8622581814
+# 31     f4a_fuel_charcoal 0.8450907857
+# 32          f4a_wash_def 0.8438281774
+# 33     f4a_drh_bellypain 0.8435073104
+# 34       f4a_hometrt_ors 0.8269013158
+# 35              f4b_skin 0.8213129950
+# 36       f4a_ani_rodents 0.8118751799
+# 37       f4a_seek_healer 0.8001766406
+# 38        f4a_disp_feces 0.7905943084
+# 39        f4a_house_tele 0.7838406223
+# 40          f4a_wash_use 0.7836803326
+# 41  f4a_drh_lethrgy_miss 0.7774943768
+# 42      f4a_house_fridge 0.7733152594
+# 43      f4a_drh_restless 0.7670832799
+# 44      f4a_water_pubtap 0.7668972828
+# 45        f4a_house_cart 0.7585250929
+# 46      f4a_cur_restless 0.7443390457
+# 47        f4a_house_elec 0.7413816263
+# 48       f4a_store_water 0.7413420613
+# 49       f4a_house_scoot 0.7233620145
+# 50         f4a_fuel_elec 0.7170952761
+# 51          f4a_cur_skin 0.6998146216
+# 52      f4a_seek_outside 0.6916119714
+# 53        f4b_under_nutr 0.6887233800
+# 54      f4a_water_bought 0.6853213408
+# 55        f4a_drh_thirst 0.6740129830
+# 56      f4a_hometrt_herb 0.6582906603
+# 57        f4a_fuel_other 0.6201866615
+# 58         f4a_house_car 0.6194354947
+# 59         f3_drh_turgor 0.6103506698
+# 60            f4b_mental 0.6071671632
+# 61          f4a_ani_goat 0.5934164474
+# 62        f4a_drh_strain 0.5928160704
+# 63         f4a_ani_sheep 0.5853476615
+# 64       f4a_water_avail 0.5722207703
+# 65    f4a_cur_fastbreath 0.5678504092
+# 66       f4a_cur_thirsty 0.5450300477
+# 67          f4a_wash_eat 0.5436167320
+# 68       f4a_house_radio 0.5269080068
+# 69     f4a_drh_lessdrink 0.4927584118
+# 70           f4a_ani_cat 0.4790536124
+# 71     f4a_hometrt_othr1 0.4719691271
+# 72            f4a_ani_no 0.4687964985
+# 73        f4a_hometrt_ab 0.4426168775
+# 74     f4a_hometrt_maize 0.4171617115
+# 75     f4a_water_covwell 0.4116188455
+# 76      f4a_hometrt_milk 0.3979342333
+# 77       f4a_fuel_natgas 0.3873221299
+# 78         f4a_fac_waste 0.3850577870
+# 79        f4a_water_well 0.3843620478
+# 80        f4a_seek_remdy 0.3730336904
+# 81         f4a_ani_other 0.3718578951
+# 82           f4a_ani_dog 0.3671253100
+# 83       f4a_house_phone 0.3202664204
+# 84          f4b_abn_hair 0.3094300969
+# 85        f4a_house_none 0.3038627564
+# 86      f4a_house_agland 0.2820429714
+# 87        f4a_water_yard 0.2711498393
+# 88        f4a_seek_pharm 0.2631595765
+# 89         f4b_recommend 0.2520731450
+# 90       f4b_chest_indrw 0.2297910458
+# 91        f4b_skin_flaky 0.2292420795
+# 92             f3_drh_iv 0.2187994399
+# 93      f4a_drh_prolapse 0.1975286717
+# 94      f4a_seek_privdoc 0.1900577710
+# 95    f4a_water_covpwell 0.1874994874
+# 96   f4a_hometrt_othrliq 0.1830255033
+# 97     f4a_water_pubwell 0.1776399616
+# 98       f4a_fuel_biogas 0.1754489154
+# 99        f4a_seek_other 0.1697277284
+# 100       f4a_trt_method 0.1651421077
+# 101        f4a_trt_water 0.1589157187
+# 102          f4a_ani_cow 0.1430671409
+# 103            f4a_floor 0.1415405488
+# 104    f4a_hometrt_othr2 0.1316339242
+# 105      f4a_seek_friend 0.1154626809
+# 106        f4a_wash_othr 0.1033847358
+# 107          f4b_bipedal 0.0744400757
+# 108      f4a_water_house 0.0646016826
+# 109            f4b_admit 0.0616805820
+# 110      f4a_wash_animal 0.0609110628
+# 111          f3_drh_hosp 0.0450064586
+# 112           f4b_rectal 0.0403367006
+# 113       f4a_water_bore 0.0208629397
+# 114        f4a_drh_consc 0.0100986885
+# 115     f4a_fuel_propane 0.0100136412
+# 116         f4a_seek_doc 0.0052901069
+# 117  f4a_water_prospring 0.0044713349
+# 118   f4a_water_deepwell 0.0039103541
+# 119       f4a_house_boat 0.0029781642
+# 120        f4a_fuel_coal 0.0022035213
+# 121     f4a_hometrt_zinc 0.0009828394
+# 122         f4a_drh_conv 0.0009351398
+# 123                 site 0.0000000000
+# 124       f4a_fuel_grass 0.0000000000
+# 125        f4a_fuel_dung 0.0000000000
+# 126        f4a_fuel_crop 0.0000000000
+# 127        f4a_fuel_kero 0.0000000000
+# 128   f4a_water_unspring 0.0000000000
+# 129      f4a_water_river 0.0000000000
+# 130       f4a_water_pond 0.0000000000
+# 131       f4a_water_rain 0.0000000000
+# 132  f4a_water_shallwell 0.0000000000
+# 133       f4a_water_othr 0.0000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.6294747 0.004792995 0.6200806 0.6388688  0.95    LR    2
+# 2 0.6030409 0.005028438 0.5931853 0.6128964  0.95    LR    5
+# 3 0.5721534 0.005454497 0.5614628 0.5828441  0.95    LR   10
+# 4 0.6161968 0.005269247 0.6058693 0.6265243  0.95    RF    2
+# 5 0.6650714 0.004936347 0.6553964 0.6747465  0.95    RF    5
+# 6 0.6536583 0.004993425 0.6438713 0.6634452  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 0.00918   -0.410    0.395 1.08     -0.177      2.33
+# 2     5 0.0102    -0.410    0.396 0.854    -0.339      2.04
+# 3    10 0.0146    -0.409    0.405 0.513    -0.322      1.37
+
+####################
+#shigella AFe>=0.5 only MUAC Mozambique only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Moz <- CPR.funct(data=Moz,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Moz[["df_imps"]]
+shigella0.5MUAC.Moz[["AUC_df"]]
+shigella0.5MUAC.Moz[["calib"]]
+
+# names      var_red
+# 1               base_age 6.709180e+00
+# 2          f4a_drh_blood 4.414815e+00
+# 3               f4b_muac 3.581613e+00
+# 4               f4b_resp 3.390990e+00
+# 5          f4a_breastfed 3.031378e+00
+# 6               f4b_temp 2.209460e+00
+# 7          f4a_ppl_house 1.611049e+00
+# 8          f4a_drh_vomit 1.516598e+00
+# 9              f4b_admit 1.232497e+00
+# 10          f4a_drh_days 1.125592e+00
+# 11        f4a_disp_feces 1.042129e+00
+# 12           f3_drh_hosp 9.825698e-01
+# 13          f4a_dad_live 8.995046e-01
+# 14         f4a_slp_rooms 8.742338e-01
+# 15      f4a_yng_children 8.455611e-01
+# 16         f4b_recommend 8.097498e-01
+# 17         f4a_prim_schl 7.190606e-01
+# 18       f4a_water_avail 6.832524e-01
+# 19             f3_drh_iv 6.631651e-01
+# 20         f4a_drh_cough 6.429754e-01
+# 21             f4b_mouth 6.184932e-01
+# 22        f4a_offr_drink 6.114234e-01
+# 23        f4a_water_bore 6.108237e-01
+# 24            f4b_mental 6.054933e-01
+# 25       f4a_house_radio 5.894011e-01
+# 26        f4a_max_stools 5.696734e-01
+# 27              f4b_eyes 5.469227e-01
+# 28          f4a_ms_water 5.452641e-01
+# 29  f4a_drh_lethrgy_miss 5.289237e-01
+# 30              f4b_skin 5.118924e-01
+# 31       f4a_house_phone 5.045858e-01
+# 32      f4a_water_pubtap 4.932110e-01
+# 33      f4a_relationship 4.689347e-01
+# 34           f4a_ani_cat 4.610535e-01
+# 35      f4a_house_agland 4.429353e-01
+# 36      f4a_cur_drymouth 4.253771e-01
+# 37      f4a_house_fridge 4.099721e-01
+# 38     f4a_water_pubwell 4.050811e-01
+# 39     f4a_drh_bellypain 3.898472e-01
+# 40          f4a_wash_use 3.859456e-01
+# 41      f4a_seek_outside 3.821266e-01
+# 42        f4a_wash_nurse 3.818524e-01
+# 43        f4a_wash_child 3.805513e-01
+# 44             f3_gender 3.740100e-01
+# 45    f4a_cur_fastbreath 3.669869e-01
+# 46          f4a_ani_goat 3.651216e-01
+# 47          f4a_wash_eat 3.639085e-01
+# 48       f4a_hometrt_ors 3.605887e-01
+# 49          f4a_drh_conv 3.574695e-01
+# 50        f4b_under_nutr 3.559630e-01
+# 51         f4a_wash_cook 3.497197e-01
+# 52          f4a_ani_fowl 3.349105e-01
+# 53            f4a_ani_no 3.342447e-01
+# 54      f4a_hometrt_none 3.320845e-01
+# 55          f4a_cur_skin 3.317282e-01
+# 56             f4a_floor 3.287704e-01
+# 57        f4a_house_elec 3.234377e-01
+# 58         f4a_fac_waste 3.206457e-01
+# 59     f4a_fuel_charcoal 3.167533e-01
+# 60       f4a_ani_rodents 3.152612e-01
+# 61        f4a_house_bike 3.081217e-01
+# 62     f4a_hometrt_othr2 3.035354e-01
+# 63      f4a_hometrt_herb 2.865196e-01
+# 64         f4a_house_car 2.755815e-01
+# 65         f3_drh_turgor 2.734089e-01
+# 66      f4a_cur_restless 2.678362e-01
+# 67        f4a_drh_thirst 2.660049e-01
+# 68        f4a_water_yard 2.591227e-01
+# 69        f4a_house_tele 2.590097e-01
+# 70       f4a_cur_thirsty 2.559276e-01
+# 71           f4a_ani_dog 2.547841e-01
+# 72          f4b_abn_hair 2.490032e-01
+# 73      f4a_drh_restless 2.484223e-01
+# 74     f4a_hometrt_othr1 2.411519e-01
+# 75       f4b_chest_indrw 2.380268e-01
+# 76        f4a_drh_strain 2.308602e-01
+# 77           f4b_bipedal 2.214174e-01
+# 78        f4a_trt_method 2.099276e-01
+# 79          f4a_wash_def 2.082045e-01
+# 80    f4a_water_covpwell 2.049738e-01
+# 81     f4a_water_covwell 1.767135e-01
+# 82         f4a_fuel_wood 1.653463e-01
+# 83     f4a_drh_lessdrink 1.587104e-01
+# 84         f4a_fuel_elec 1.573527e-01
+# 85         f4a_trt_water 1.553366e-01
+# 86           f4a_ani_cow 1.480055e-01
+# 87         f4a_share_fac 1.143732e-01
+# 88        f4a_water_rain 1.050997e-01
+# 89        f4b_skin_flaky 9.226831e-02
+# 90      f4a_drh_prolapse 7.776564e-02
+# 91         f4a_ani_other 7.592323e-02
+# 92       f4a_wash_animal 7.032749e-02
+# 93        f4a_house_boat 6.796956e-02
+# 94       f4a_fuel_natgas 5.980988e-02
+# 95        f4a_house_cart 4.906125e-02
+# 96        f4a_water_othr 4.754430e-02
+# 97   f4a_hometrt_othrliq 4.604952e-02
+# 98        f4a_water_well 4.330392e-02
+# 99     f4a_hometrt_maize 4.228351e-02
+# 100      f4a_store_water 4.067331e-02
+# 101       f4a_house_none 3.018712e-02
+# 102      f4a_house_scoot 2.668359e-02
+# 103     f4a_water_bought 2.559959e-02
+# 104        f4a_drh_consc 2.505468e-02
+# 105      f4a_water_house 2.246797e-02
+# 106   f4a_water_deepwell 1.530018e-02
+# 107      f4a_seek_friend 1.090590e-02
+# 108        f4a_ani_sheep 3.086195e-03
+# 109       f4a_hometrt_ab 2.583952e-03
+# 110       f4a_fuel_grass 1.648974e-03
+# 111       f4a_fuel_other 1.454261e-03
+# 112       f4a_water_pond 1.051669e-03
+# 113           f4b_rectal 6.339706e-04
+# 114      f4a_water_river 4.000000e-04
+# 115     f4a_hometrt_zinc 3.354037e-04
+# 116       f4a_seek_other 1.000000e-04
+# 117     f4a_fuel_propane 3.308824e-05
+# 118                 site 0.000000e+00
+# 119      f4a_fuel_biogas 0.000000e+00
+# 120        f4a_fuel_coal 0.000000e+00
+# 121        f4a_fuel_dung 0.000000e+00
+# 122        f4a_fuel_crop 0.000000e+00
+# 123        f4a_fuel_kero 0.000000e+00
+# 124  f4a_water_prospring 0.000000e+00
+# 125   f4a_water_unspring 0.000000e+00
+# 126  f4a_water_shallwell 0.000000e+00
+# 127        f4a_wash_othr 0.000000e+00
+# 128     f4a_hometrt_milk 0.000000e+00
+# 129       f4a_seek_pharm 0.000000e+00
+# 130      f4a_seek_healer 0.000000e+00
+# 131         f4a_seek_doc 0.000000e+00
+# 132     f4a_seek_privdoc 0.000000e+00
+# 133       f4a_seek_remdy 0.000000e+00
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.8189387 0.005198175 0.8087504 0.8291269  0.95    LR    2
+# 2 0.8171563 0.005731073 0.8059236 0.8283890  0.95    LR    5
+# 3 0.8135040 0.005869763 0.8019995 0.8250086  0.95    LR   10
+# 4 0.8209365 0.005540957 0.8100764 0.8317966  0.95    RF    2
+# 5 0.8308213 0.005342062 0.8203510 0.8412915  0.95    RF    5
+# 6 0.8519900 0.004926546 0.8423341 0.8616458  0.95    RF   10
+
+# nvar     intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>    <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2  0.0148    -0.617    0.592 0.961     0.465      1.53
+# 2     5 -0.00459   -0.660    0.597 0.958     0.514      1.50
+# 3    10 -0.0144    -0.687    0.604 0.845     0.446      1.33
+
+####################
+#shigella AFe>=0.5 only MUAC Kenya only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Kenya <- CPR.funct(data=Kenya,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Kenya[["df_imps"]]
+shigella0.5MUAC.Kenya[["AUC_df"]]
+shigella0.5MUAC.Kenya[["calib"]]
+
+# names      var_red
+# 1               base_age 3.3549978916
+# 2               f4b_resp 2.8100923474
+# 3               f4b_muac 2.7758939878
+# 4          f4a_drh_blood 2.6696938710
+# 5               f4b_temp 2.5850439953
+# 6          f4a_ppl_house 1.7898061270
+# 7          f4a_share_fac 1.4536119456
+# 8           f4a_drh_days 1.4302811989
+# 9          f4a_prim_schl 1.0934178721
+# 10        f4a_max_stools 1.0844612505
+# 11        f4a_offr_drink 1.0708984841
+# 12         f4a_drh_cough 0.8017013642
+# 13         f4a_wash_othr 0.7802127478
+# 14        f4a_trt_method 0.7756905438
+# 15           f4a_ani_cow 0.7595671124
+# 16      f4a_yng_children 0.7549435695
+# 17      f4a_water_pubtap 0.7044067107
+# 18          f4a_dad_live 0.6898027442
+# 19         f4a_drh_vomit 0.6839825747
+# 20         f4a_slp_rooms 0.6227132549
+# 21      f4a_relationship 0.6179016790
+# 22         f4a_breastfed 0.6121337171
+# 23       f4a_hometrt_ors 0.5857847919
+# 24           f4a_ani_cat 0.5851262167
+# 25             f4b_mouth 0.5763618363
+# 26           f4a_ani_dog 0.5723921512
+# 27        f4b_under_nutr 0.5669481322
+# 28            f4b_mental 0.5486622824
+# 29     f4a_hometrt_maize 0.5484194089
+# 30       f4a_house_phone 0.5395964191
+# 31        f4a_disp_feces 0.5199809965
+# 32          f4a_ms_water 0.5196804093
+# 33          f4a_wash_eat 0.5155833214
+# 34          f4a_wash_def 0.5082864333
+# 35        f4a_seek_pharm 0.4932658350
+# 36      f4a_cur_drymouth 0.4897849016
+# 37       f4a_cur_thirsty 0.4837099246
+# 38     f4a_drh_bellypain 0.4679491889
+# 39             f3_gender 0.4657452337
+# 40        f4a_drh_strain 0.4556241788
+# 41         f4b_recommend 0.4520243304
+# 42        f4a_house_bike 0.4479319533
+# 43       f4a_ani_rodents 0.4477066960
+# 44          f4a_wash_use 0.4342483503
+# 45          f4a_ani_goat 0.4281401928
+# 46        f4a_water_rain 0.4257166523
+# 47     f4a_fuel_charcoal 0.4219699198
+# 48              f4b_skin 0.4166079804
+# 49  f4a_drh_lethrgy_miss 0.4110516691
+# 50        f4a_drh_thirst 0.4099069048
+# 51      f4a_cur_restless 0.4087381355
+# 52         f4a_ani_sheep 0.4072798582
+# 53      f4a_drh_restless 0.3995635691
+# 54        f4a_wash_child 0.3986437417
+# 55      f4a_hometrt_none 0.3952428387
+# 56         f4a_trt_water 0.3912849216
+# 57      f4a_seek_outside 0.3878129872
+# 58       f4a_fuel_biogas 0.3853186065
+# 59         f4a_wash_cook 0.3669728944
+# 60       f4a_water_river 0.3557441750
+# 61          f4b_abn_hair 0.3529547124
+# 62        f4a_wash_nurse 0.3445590302
+# 63         f3_drh_turgor 0.3301715958
+# 64             f4a_floor 0.3290006245
+# 65          f4a_ani_fowl 0.3286309815
+# 66     f4a_hometrt_othr1 0.3273015279
+# 67       f4a_house_radio 0.3213122952
+# 68    f4a_cur_fastbreath 0.3096890416
+# 69       f4a_seek_healer 0.3075337665
+# 70     f4a_drh_lessdrink 0.3017845661
+# 71    f4a_water_deepwell 0.2985470004
+# 72        f4a_hometrt_ab 0.2957198929
+# 73        f4a_water_bore 0.2945116198
+# 74       f4a_store_water 0.2742944397
+# 75         f4a_drh_consc 0.2678631110
+# 76          f4a_cur_skin 0.2599187878
+# 77        f4a_house_tele 0.2561923667
+# 78       f4a_water_avail 0.2558433740
+# 79      f4a_hometrt_herb 0.2529445600
+# 80       f4a_wash_animal 0.2527321912
+# 81        f4a_water_pond 0.2488929906
+# 82         f4a_fuel_wood 0.2386644407
+# 83      f4a_house_agland 0.2367715285
+# 84         f4a_fac_waste 0.2286369238
+# 85        f4a_house_cart 0.2273836760
+# 86        f4a_water_well 0.2177649994
+# 87             f3_drh_iv 0.2130925775
+# 88        f4a_house_none 0.2001126214
+# 89           f4b_bipedal 0.1941335829
+# 90        f4b_skin_flaky 0.1915164565
+# 91           f3_drh_hosp 0.1866446155
+# 92    f4a_water_unspring 0.1825856966
+# 93        f4a_seek_other 0.1805010568
+# 94         f4a_fuel_crop 0.1711096632
+# 95      f4a_drh_prolapse 0.1671066325
+# 96         f4a_ani_other 0.1632919003
+# 97          f4a_drh_conv 0.1511366109
+# 98        f4a_house_elec 0.1437896788
+# 99             f4b_admit 0.1414519133
+# 100           f4b_rectal 0.1411350227
+# 101      f4a_house_scoot 0.1370268290
+# 102        f4a_fuel_kero 0.1311995421
+# 103    f4a_water_pubwell 0.1282207949
+# 104  f4a_water_shallwell 0.1033334652
+# 105    f4a_hometrt_othr2 0.0957790717
+# 106           f4a_ani_no 0.0791366996
+# 107         f4a_seek_doc 0.0683048846
+# 108       f4a_water_yard 0.0656506615
+# 109       f4a_fuel_grass 0.0653394275
+# 110             f4b_eyes 0.0639433928
+# 111     f4a_hometrt_zinc 0.0639067014
+# 112  f4a_water_prospring 0.0448796149
+# 113       f4a_seek_remdy 0.0287595413
+# 114      f4b_chest_indrw 0.0109463376
+# 115  f4a_hometrt_othrliq 0.0094754540
+# 116   f4a_water_covpwell 0.0070058758
+# 117     f4a_hometrt_milk 0.0057960014
+# 118        f4a_house_car 0.0038544833
+# 119      f4a_seek_friend 0.0027423077
+# 120      f4a_water_house 0.0012181287
+# 121     f4a_house_fridge 0.0011428571
+# 122      f4a_fuel_natgas 0.0007111111
+# 123    f4a_water_covwell 0.0001469139
+# 124                 site 0.0000000000
+# 125       f4a_house_boat 0.0000000000
+# 126        f4a_fuel_elec 0.0000000000
+# 127     f4a_fuel_propane 0.0000000000
+# 128        f4a_fuel_coal 0.0000000000
+# 129        f4a_fuel_dung 0.0000000000
+# 130       f4a_fuel_other 0.0000000000
+# 131     f4a_water_bought 0.0000000000
+# 132       f4a_water_othr 0.0000000000
+# 133     f4a_seek_privdoc 0.0000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.6148808 0.006970174 0.6012195 0.6285421  0.95    LR    2
+# 2 0.6790027 0.007452718 0.6643956 0.6936097  0.95    LR    5
+# 3 0.6667509 0.007476920 0.6520964 0.6814054  0.95    LR   10
+# 4 0.5660948 0.007025022 0.5523260 0.5798636  0.95    RF    2
+# 5 0.5900477 0.007615777 0.5751211 0.6049744  0.95    RF    5
+# 6 0.6149701 0.008129173 0.5990372 0.6309030  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.0309   -0.604    0.474 0.901    -0.194      2.04
+# 2     5 -0.0220   -0.611    0.501 0.926     0.261      1.63
+# 3    10 -0.0297   -0.626    0.501 0.657     0.116      1.24
+
+####################
+#shigella AFe>=0.5 only MUAC India only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+summary(India$f4a_disp_feces)
+# 1   2   3   4   6 
+# 1   0 197 609  24 
+India_complete <- India
+India_complete$f4a_disp_feces <- as.factor(as.numeric(ifelse(India_complete$f4a_disp_feces==1 | India_complete$f4a_disp_feces==6,6,India_complete$f4a_disp_feces)))
+summary(India_complete$f4a_disp_feces)
+table(India_complete$f4a_disp_feces)
+
+shigella0.5MUAC.India <- CPR.funct(data=India_complete,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.India[["df_imps"]]
+shigella0.5MUAC.India[["AUC_df"]]
+shigella0.5MUAC.India[["calib"]]
+
+# names      var_red
+# 1          f4a_drh_blood 1.209865e+01
+# 2               base_age 9.170974e+00
+# 3               f4b_muac 5.457868e+00
+# 4               f4b_resp 5.169854e+00
+# 5               f4b_temp 4.611209e+00
+# 6          f4a_share_fac 4.453055e+00
+# 7          f4a_ppl_house 3.647720e+00
+# 8           f4a_drh_days 2.329913e+00
+# 9          f4a_prim_schl 2.233619e+00
+# 10        f4a_disp_feces 1.823665e+00
+# 11              f4b_eyes 1.628991e+00
+# 12        f4a_max_stools 1.624034e+00
+# 13         f4a_slp_rooms 1.553071e+00
+# 14        f4a_offr_drink 1.466536e+00
+# 15        f4a_trt_method 1.425752e+00
+# 16         f4a_drh_vomit 1.383632e+00
+# 17      f4a_yng_children 1.345078e+00
+# 18     f4a_drh_bellypain 1.196301e+00
+# 19          f4a_wash_eat 1.173465e+00
+# 20            f4b_mental 1.166368e+00
+# 21         f4a_drh_cough 1.147781e+00
+# 22       f4a_house_radio 1.102121e+00
+# 23       f4a_cur_thirsty 1.084468e+00
+# 24         f4a_breastfed 1.069211e+00
+# 25        f4a_wash_child 9.900556e-01
+# 26             f3_gender 9.568297e-01
+# 27     f4a_hometrt_maize 9.214548e-01
+# 28          f4a_ani_fowl 9.166637e-01
+# 29        f4a_wash_nurse 9.028373e-01
+# 30         f4a_fuel_coal 9.001560e-01
+# 31          f4a_wash_use 8.875829e-01
+# 32    f4a_cur_fastbreath 8.713636e-01
+# 33           f4a_ani_cat 8.706951e-01
+# 34      f4a_fuel_propane 8.612767e-01
+# 35          f4a_cur_skin 8.554520e-01
+# 36         f4a_trt_water 8.285016e-01
+# 37         f4b_recommend 8.158931e-01
+# 38          f4a_wash_def 8.138564e-01
+# 39       f4a_house_phone 8.070219e-01
+# 40             f4b_mouth 7.999542e-01
+# 41         f4a_wash_cook 7.936963e-01
+# 42         f4a_fuel_wood 7.919703e-01
+# 43      f4a_hometrt_none 7.811355e-01
+# 44      f4a_cur_restless 7.778519e-01
+# 45        f4a_drh_thirst 7.712362e-01
+# 46      f4a_water_pubtap 7.601688e-01
+# 47        f4a_house_tele 7.371620e-01
+# 48      f4a_drh_restless 7.297104e-01
+# 49     f4a_drh_lessdrink 7.180885e-01
+# 50       f4a_hometrt_ors 7.105445e-01
+# 51           f4a_ani_dog 7.075202e-01
+# 52        f4a_house_bike 7.072020e-01
+# 53          f4a_ms_water 6.758052e-01
+# 54  f4a_drh_lethrgy_miss 6.637874e-01
+# 55        f4a_water_yard 6.580353e-01
+# 56      f4a_relationship 6.275462e-01
+# 57         f4a_fac_waste 6.003261e-01
+# 58         f4a_fuel_kero 5.938841e-01
+# 59             f4b_admit 5.672675e-01
+# 60      f4a_seek_outside 5.568263e-01
+# 61           f3_drh_hosp 5.328202e-01
+# 62        f4b_under_nutr 5.283653e-01
+# 63       f4a_house_scoot 5.056396e-01
+# 64     f4a_hometrt_othr1 4.724351e-01
+# 65        f4a_drh_strain 4.701945e-01
+# 66           f4a_ani_cow 4.588045e-01
+# 67      f4a_house_fridge 4.240082e-01
+# 68          f4a_ani_goat 4.053966e-01
+# 69         f3_drh_turgor 4.039969e-01
+# 70    f4a_water_deepwell 3.970510e-01
+# 71      f4a_cur_drymouth 3.945689e-01
+# 72      f4a_seek_privdoc 3.929830e-01
+# 73         f4a_ani_other 3.914016e-01
+# 74      f4a_hometrt_milk 3.802061e-01
+# 75              f4b_skin 3.607467e-01
+# 76        f4a_hometrt_ab 3.584808e-01
+# 77             f3_drh_iv 3.262506e-01
+# 78       f4a_wash_animal 3.194617e-01
+# 79          f4a_seek_doc 3.012258e-01
+# 80             f4a_floor 2.931777e-01
+# 81       f4a_ani_rodents 2.725774e-01
+# 82        f4a_house_none 2.674242e-01
+# 83      f4a_drh_prolapse 2.671043e-01
+# 84       f4a_store_water 2.406874e-01
+# 85        f4a_house_elec 2.321911e-01
+# 86        f4a_seek_other 2.178878e-01
+# 87       f4a_water_house 1.906823e-01
+# 88        f4a_water_well 1.763408e-01
+# 89      f4a_hometrt_herb 1.704205e-01
+# 90       f4a_water_avail 1.681678e-01
+# 91        f4a_seek_pharm 1.647639e-01
+# 92            f4b_rectal 1.474742e-01
+# 93     f4a_hometrt_othr2 1.337709e-01
+# 94       f4b_chest_indrw 1.207314e-01
+# 95         f4a_house_car 1.168267e-01
+# 96         f4a_wash_othr 1.153541e-01
+# 97          f4a_dad_live 1.138087e-01
+# 98            f4a_ani_no 7.082293e-02
+# 99          f4b_abn_hair 5.659165e-02
+# 100       f4a_fuel_grass 5.370013e-02
+# 101        f4a_fuel_elec 5.260574e-02
+# 102       f4a_water_othr 5.258288e-02
+# 103     f4a_hometrt_zinc 4.638096e-02
+# 104  f4a_hometrt_othrliq 4.583967e-02
+# 105         f4a_drh_conv 3.063045e-02
+# 106    f4a_water_covwell 3.003726e-02
+# 107      f4a_fuel_natgas 2.785264e-02
+# 108    f4a_fuel_charcoal 2.006478e-02
+# 109  f4a_water_shallwell 1.372528e-02
+# 110       f4a_seek_remdy 3.811378e-03
+# 111     f4a_house_agland 3.415440e-03
+# 112     f4a_water_bought 3.038186e-03
+# 113      f4a_seek_friend 2.580478e-03
+# 114        f4a_ani_sheep 7.111111e-04
+# 115        f4a_fuel_dung 6.240494e-04
+# 116                 site 0.000000e+00
+# 117       f4a_house_cart 0.000000e+00
+# 118       f4a_house_boat 0.000000e+00
+# 119      f4a_fuel_biogas 0.000000e+00
+# 120        f4a_fuel_crop 0.000000e+00
+# 121       f4a_fuel_other 0.000000e+00
+# 122   f4a_water_covpwell 0.000000e+00
+# 123  f4a_water_prospring 0.000000e+00
+# 124   f4a_water_unspring 0.000000e+00
+# 125    f4a_water_pubwell 0.000000e+00
+# 126      f4a_water_river 0.000000e+00
+# 127       f4a_water_pond 0.000000e+00
+# 128       f4a_water_rain 0.000000e+00
+# 129       f4a_water_bore 0.000000e+00
+# 130        f4a_drh_consc 0.000000e+00
+# 131      f4a_seek_healer 0.000000e+00
+# 132          f4b_bipedal 0.000000e+00
+# 133       f4b_skin_flaky 0.000000e+00
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.8042034 0.004433769 0.7955134 0.8128934  0.95    LR    2
+# 2 0.7932302 0.004599968 0.7842145 0.8022460  0.95    LR    5
+# 3 0.7747260 0.005098984 0.7647322 0.7847198  0.95    LR   10
+# 4 0.7964279 0.004649952 0.7873142 0.8055417  0.95    RF    2
+# 5 0.7869301 0.004554500 0.7780035 0.7958568  0.95    RF    5
+# 6 0.8070417 0.004387937 0.7984415 0.8156419  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.0899   -0.560    0.347 1.04      0.673      1.46
+# 2     5 -0.0883   -0.560    0.351 1.01      0.651      1.42
+# 3    10 -0.0945   -0.571    0.350 0.864     0.528      1.24
+
+
+####################
+#shigella AFe>=0.5 only MUAC Bangladesh only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Bdesh <- CPR.funct(data=Bdesh,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Bdesh[["df_imps"]]
+shigella0.5MUAC.Bdesh[["AUC_df"]]
+shigella0.5MUAC.Bdesh[["calib"]]
+
+# Pak <- cases %>% filter(site == "Pakistan")
+
+# names      var_red
+# 1               base_age 45.577269268
+# 2               f4b_temp  8.330509740
+# 3               f4b_muac  8.201859297
+# 4          f4a_drh_blood  7.970851729
+# 5               f4b_resp  7.427337751
+# 6               f4b_eyes  5.695252871
+# 7         f4a_drh_strain  3.851761911
+# 8           f4a_drh_days  3.730951486
+# 9          f4a_ppl_house  3.538972495
+# 10     f4a_drh_bellypain  3.487280723
+# 11         f4a_drh_vomit  3.345739370
+# 12         f4a_slp_rooms  2.836990566
+# 13         f4a_fac_waste  2.641428828
+# 14         f4a_breastfed  2.563365835
+# 15        f4a_max_stools  2.549762022
+# 16         f4a_share_fac  2.173024504
+# 17         f4a_prim_schl  2.124198859
+# 18             f4b_admit  1.881340666
+# 19         f4b_recommend  1.846553289
+# 20      f4a_hometrt_none  1.820093006
+# 21          f4a_dad_live  1.718253038
+# 22             f3_drh_iv  1.704935150
+# 23        f4a_drh_thirst  1.674617382
+# 24         f4a_drh_cough  1.666612104
+# 25       f4a_cur_thirsty  1.603573573
+# 26        f4a_offr_drink  1.550710883
+# 27       f4a_hometrt_ors  1.379996450
+# 28        f4a_disp_feces  1.370535431
+# 29      f4a_seek_outside  1.340755235
+# 30      f4a_yng_children  1.325538383
+# 31      f4a_house_agland  1.281802125
+# 32        f4a_wash_child  1.202065641
+# 33        f4a_house_elec  1.183116082
+# 34           f3_drh_hosp  1.182454352
+# 35             f3_gender  1.153481125
+# 36        f4a_hometrt_ab  1.151080414
+# 37        f4a_house_tele  1.146668843
+# 38          f4a_ani_fowl  1.128229572
+# 39          f4a_wash_use  1.127533393
+# 40         f4a_fuel_dung  1.111964820
+# 41          f4a_drh_conv  1.096863893
+# 42      f4a_hometrt_zinc  1.096233893
+# 43        f4a_house_bike  1.094633965
+# 44         f4a_wash_cook  1.092847557
+# 45          f4a_wash_eat  1.090153177
+# 46       f4a_house_phone  1.088320398
+# 47        f4a_seek_pharm  1.085755318
+# 48      f4a_drh_restless  1.042782157
+# 49       f4a_house_radio  1.025869871
+# 50    f4a_water_deepwell  1.020899196
+# 51         f4a_fuel_crop  1.014235011
+# 52     f4a_hometrt_othr1  1.002294300
+# 53         f4a_fuel_wood  0.998942511
+# 54   f4a_water_shallwell  0.987804045
+# 55      f4a_house_fridge  0.987508865
+# 56           f4a_ani_cow  0.973493273
+# 57      f4a_cur_drymouth  0.935425258
+# 58       f4a_wash_animal  0.934670756
+# 59      f4a_cur_restless  0.922328346
+# 60             f4a_floor  0.920308810
+# 61        f4a_fuel_grass  0.911082504
+# 62        f4a_wash_nurse  0.909839193
+# 63         f4a_wash_othr  0.905465383
+# 64          f4a_wash_def  0.872727116
+# 65           f4a_ani_dog  0.847647125
+# 66  f4a_drh_lethrgy_miss  0.822762977
+# 67       f4a_ani_rodents  0.791407557
+# 68           f4a_ani_cat  0.791277045
+# 69       f4a_house_scoot  0.781702880
+# 70          f4a_ani_goat  0.716586737
+# 71         f3_drh_turgor  0.707514190
+# 72          f4a_cur_skin  0.680571992
+# 73        f4a_seek_remdy  0.679433799
+# 74            f4a_ani_no  0.570357195
+# 75        f4a_house_none  0.562198682
+# 76       f4a_fuel_natgas  0.480274375
+# 77          f4a_seek_doc  0.453485218
+# 78            f4b_mental  0.430566627
+# 79      f4a_hometrt_herb  0.424068571
+# 80              f4b_skin  0.397961698
+# 81     f4a_drh_lessdrink  0.369975208
+# 82        f4a_trt_method  0.361434034
+# 83         f4a_trt_water  0.340138986
+# 84         f4a_ani_sheep  0.324173013
+# 85    f4a_cur_fastbreath  0.302606560
+# 86             f4b_mouth  0.300047747
+# 87         f4a_house_car  0.267115946
+# 88         f4a_drh_consc  0.250741119
+# 89        f4a_house_boat  0.236963319
+# 90     f4a_hometrt_othr2  0.211286238
+# 91      f4a_seek_privdoc  0.194088788
+# 92     f4a_hometrt_maize  0.187574056
+# 93      f4a_drh_prolapse  0.161926905
+# 94       f4a_seek_healer  0.148267436
+# 95         f4a_fuel_elec  0.142385124
+# 96        f4b_under_nutr  0.139866396
+# 97      f4a_fuel_propane  0.120133050
+# 98   f4a_hometrt_othrliq  0.098359572
+# 99        f4a_house_cart  0.081592142
+# 100      f4a_store_water  0.081341077
+# 101       f4a_water_well  0.079154708
+# 102         f4a_ms_water  0.077125377
+# 103       f4a_fuel_other  0.055468890
+# 104     f4a_relationship  0.054102954
+# 105      f4a_seek_friend  0.033029163
+# 106      f4b_chest_indrw  0.018629164
+# 107    f4a_water_covwell  0.017350934
+# 108           f4b_rectal  0.016419901
+# 109      f4a_water_avail  0.008504195
+# 110    f4a_water_pubwell  0.002353338
+# 111        f4a_fuel_kero  0.002172997
+# 112      f4a_water_house  0.001466351
+# 113        f4a_ani_other  0.001310224
+# 114                 site  0.000000000
+# 115      f4a_fuel_biogas  0.000000000
+# 116        f4a_fuel_coal  0.000000000
+# 117    f4a_fuel_charcoal  0.000000000
+# 118       f4a_water_yard  0.000000000
+# 119   f4a_water_covpwell  0.000000000
+# 120     f4a_water_pubtap  0.000000000
+# 121  f4a_water_prospring  0.000000000
+# 122   f4a_water_unspring  0.000000000
+# 123      f4a_water_river  0.000000000
+# 124       f4a_water_pond  0.000000000
+# 125       f4a_water_rain  0.000000000
+# 126     f4a_water_bought  0.000000000
+# 127       f4a_water_othr  0.000000000
+# 128       f4a_water_bore  0.000000000
+# 129     f4a_hometrt_milk  0.000000000
+# 130       f4a_seek_other  0.000000000
+# 131          f4b_bipedal  0.000000000
+# 132         f4b_abn_hair  0.000000000
+# 133       f4b_skin_flaky  0.000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.8503952 0.003113447 0.8442929 0.8564974  0.95    LR    2
+# 2 0.8978208 0.002530504 0.8928612 0.9027805  0.95    LR    5
+# 3 0.9058597 0.002417219 0.9011221 0.9105974  0.95    LR   10
+# 4 0.8375491 0.003133531 0.8314075 0.8436907  0.95    RF    2
+# 5 0.9116285 0.002238055 0.9072420 0.9160150  0.95    RF    5
+# 6 0.9210763 0.002134209 0.9168934 0.9252593  0.95    RF   10
+
+# nvar      intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>     <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.0154     -0.381    0.351  1.03     0.712      1.41
+# 2     5 -0.0148     -0.423    0.394  1.05     0.756      1.41
+# 3    10  0.000332   -0.418    0.420  1.01     0.727      1.37
+
+####################
+#shigella AFe>=0.5 only MUAC Pakistan only
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Pak <- CPR.funct(data=Pak,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Pak[["df_imps"]]
+shigella0.5MUAC.Pak[["AUC_df"]]
+shigella0.5MUAC.Pak[["calib"]]
+
+# names      var_red
+# 1          f4a_drh_blood 13.921425043
+# 2               base_age  7.880024858
+# 3               f4b_muac  6.641009001
+# 4               f4b_resp  5.977212952
+# 5               f4b_temp  5.298615234
+# 6          f4a_ppl_house  4.431700958
+# 7           f4a_drh_days  3.126995069
+# 8       f4a_yng_children  3.000581441
+# 9          f4b_recommend  2.942218913
+# 10       f4a_water_avail  2.740298968
+# 11              f4b_eyes  2.465313985
+# 12         f4a_drh_vomit  2.257324821
+# 13         f4a_prim_schl  2.208528098
+# 14         f4a_slp_rooms  2.197977619
+# 15        f4a_max_stools  2.057455153
+# 16         f4a_breastfed  1.803174141
+# 17        f4a_trt_method  1.788808909
+# 18        f4a_offr_drink  1.643002424
+# 19         f4a_share_fac  1.514647364
+# 20          f4a_ms_water  1.392661752
+# 21             f4b_mouth  1.367261186
+# 22            f4b_mental  1.346102361
+# 23        f4a_house_tele  1.255975542
+# 24     f4a_drh_bellypain  1.225559441
+# 25             f3_drh_iv  1.154693424
+# 26        f4a_disp_feces  1.153854597
+# 27      f4a_relationship  1.145437968
+# 28         f4a_drh_cough  1.127685560
+# 29      f4a_house_fridge  1.115700565
+# 30             f3_gender  1.096401007
+# 31  f4a_drh_lethrgy_miss  1.075620947
+# 32          f4a_cur_skin  1.074026117
+# 33         f4a_wash_cook  1.049975017
+# 34        f4a_drh_thirst  1.033639545
+# 35      f4a_cur_drymouth  1.032928234
+# 36              f4b_skin  1.028258508
+# 37        f4a_wash_nurse  1.010699775
+# 38        f4a_wash_child  1.003259518
+# 39         f3_drh_turgor  0.989806168
+# 40       f4a_hometrt_ors  0.968696829
+# 41       f4a_water_house  0.964307362
+# 42     f4a_drh_lessdrink  0.957363472
+# 43         f4a_fac_waste  0.955227298
+# 44        f4b_under_nutr  0.951649599
+# 45      f4a_cur_restless  0.945844678
+# 46       f4a_cur_thirsty  0.942774054
+# 47      f4a_seek_outside  0.942144982
+# 48      f4a_hometrt_none  0.936618427
+# 49       f4a_house_phone  0.929805749
+# 50       f4a_store_water  0.904111555
+# 51          f4a_wash_def  0.902635527
+# 52      f4a_water_bought  0.899037611
+# 53        f4a_drh_strain  0.865413184
+# 54         f4a_trt_water  0.858118454
+# 55          f4a_wash_use  0.834844274
+# 56      f4a_drh_restless  0.831999996
+# 57          f4a_wash_eat  0.816596527
+# 58       f4a_wash_animal  0.784964149
+# 59            f4a_ani_no  0.780610274
+# 60       f4a_house_scoot  0.764296731
+# 61             f4a_floor  0.745064986
+# 62     f4a_hometrt_maize  0.727495485
+# 63         f4a_drh_consc  0.706756740
+# 64          f4a_ani_fowl  0.701918991
+# 65     f4a_hometrt_othr1  0.694547323
+# 66       f4a_fuel_natgas  0.681012393
+# 67          f4a_dad_live  0.664186949
+# 68         f4a_fuel_wood  0.628719413
+# 69        f4a_water_yard  0.576589192
+# 70      f4a_seek_privdoc  0.565184640
+# 71          f4a_ani_goat  0.563069150
+# 72        f4a_house_bike  0.528212628
+# 73    f4a_cur_fastbreath  0.525624819
+# 74      f4a_water_pubtap  0.521390564
+# 75        f4a_seek_pharm  0.491965667
+# 76       f4a_house_radio  0.471897381
+# 77        f4a_hometrt_ab  0.461133943
+# 78           f4a_ani_cat  0.455450224
+# 79      f4a_hometrt_zinc  0.442212441
+# 80          f4a_seek_doc  0.423691888
+# 81         f4a_wash_othr  0.409593660
+# 82        f4a_water_othr  0.401206477
+# 83     f4a_hometrt_othr2  0.372781679
+# 84           f4a_ani_cow  0.360411779
+# 85         f4a_house_car  0.354137464
+# 86          f4b_abn_hair  0.344904942
+# 87           f4a_ani_dog  0.304123051
+# 88         f4a_fuel_kero  0.274993723
+# 89      f4a_house_agland  0.261807988
+# 90        f4a_fuel_grass  0.261020557
+# 91   f4a_hometrt_othrliq  0.258371150
+# 92        f4a_house_boat  0.255249719
+# 93      f4a_hometrt_milk  0.250806011
+# 94           f3_drh_hosp  0.249151512
+# 95             f4b_admit  0.217882509
+# 96        f4b_skin_flaky  0.209779034
+# 97        f4a_house_elec  0.195469573
+# 98        f4a_seek_other  0.193844587
+# 99         f4a_ani_other  0.189257776
+# 100        f4a_fuel_dung  0.179569677
+# 101      f4b_chest_indrw  0.166902377
+# 102     f4a_hometrt_herb  0.153102220
+# 103       f4a_house_cart  0.149562985
+# 104     f4a_drh_prolapse  0.145711069
+# 105       f4a_house_none  0.089057000
+# 106       f4a_water_pond  0.087205358
+# 107           f4b_rectal  0.083629422
+# 108       f4a_seek_remdy  0.066355746
+# 109       f4a_water_bore  0.047937210
+# 110         f4a_drh_conv  0.038343999
+# 111      f4a_ani_rodents  0.036869892
+# 112      f4a_seek_healer  0.036280293
+# 113   f4a_water_covpwell  0.027053093
+# 114        f4a_ani_sheep  0.024803449
+# 115        f4a_fuel_elec  0.010468612
+# 116     f4a_fuel_propane  0.005042283
+# 117      f4a_fuel_biogas  0.003619444
+# 118          f4b_bipedal  0.003071558
+# 119    f4a_water_covwell  0.001197833
+# 120                 site  0.000000000
+# 121        f4a_fuel_coal  0.000000000
+# 122    f4a_fuel_charcoal  0.000000000
+# 123        f4a_fuel_crop  0.000000000
+# 124       f4a_fuel_other  0.000000000
+# 125  f4a_water_prospring  0.000000000
+# 126       f4a_water_well  0.000000000
+# 127   f4a_water_unspring  0.000000000
+# 128    f4a_water_pubwell  0.000000000
+# 129      f4a_water_river  0.000000000
+# 130   f4a_water_deepwell  0.000000000
+# 131       f4a_water_rain  0.000000000
+# 132  f4a_water_shallwell  0.000000000
+# 133      f4a_seek_friend  0.000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.7386650 0.004571672 0.7297046 0.7476253  0.95    LR    2
+# 2 0.7109034 0.004878651 0.7013414 0.7204653  0.95    LR    5
+# 3 0.7175361 0.004907864 0.7079169 0.7271553  0.95    LR   10
+# 4 0.7535636 0.004443313 0.7448548 0.7622723  0.95    RF    2
+# 5 0.7348203 0.004703145 0.7256023 0.7440383  0.95    RF    5
+# 6 0.7379715 0.004696006 0.7287675 0.7471755  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.0182   -0.428    0.371 0.961     0.586      1.37
+# 2     5 -0.0192   -0.430    0.372 0.931     0.564      1.33
+# 3    10 -0.0191   -0.435    0.377 0.834     0.490      1.21
+
+####################
+#shigella AFe>=0.5 only MUAC by country - Africa, val in Asia (not including Bdesh)
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Afr <- CPR.funct(data=Afr,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Afr[["df_imps"]]
+shigella0.5MUAC.Afr[["AUC_df"]]
+shigella0.5MUAC.Afr[["calib"]]
+
+# names      var_red
+# 1               base_age 26.854273731
+# 2          f4a_drh_blood 21.956262549
+# 3               f4b_resp 14.743321818
+# 4               f4b_muac 14.624948791
+# 5               f4b_temp 13.672218699
+# 6          f4a_ppl_house 11.981312631
+# 7          f4a_slp_rooms  8.222368867
+# 8           f4a_drh_days  7.593206578
+# 9       f4a_yng_children  6.856329631
+# 10         f4a_breastfed  6.432585917
+# 11         f4a_share_fac  5.094109627
+# 12         f4a_prim_schl  5.031292041
+# 13         f4b_recommend  4.514271822
+# 14        f4a_offr_drink  4.500681148
+# 15         f4a_drh_vomit  4.350247921
+# 16          f4a_dad_live  3.925262403
+# 17              f4b_eyes  3.742335480
+# 18                  site  3.577097407
+# 19        f4a_max_stools  3.433710408
+# 20          f4a_ms_water  3.178913416
+# 21             f4b_mouth  3.177585927
+# 22         f4a_drh_cough  2.829809131
+# 23        f4a_disp_feces  2.800333808
+# 24      f4a_relationship  2.679759799
+# 25              f4b_skin  2.606468246
+# 26      f4a_cur_drymouth  2.522849571
+# 27       f4a_water_avail  2.511207358
+# 28        f4a_trt_method  2.444280807
+# 29     f4a_drh_bellypain  2.416892747
+# 30        f4a_house_bike  2.391774479
+# 31         f4a_wash_cook  2.335854128
+# 32  f4a_drh_lethrgy_miss  2.316605028
+# 33             f3_gender  2.274249701
+# 34        f4a_wash_nurse  2.202880530
+# 35      f4a_water_pubtap  2.192636141
+# 36          f4a_wash_use  2.170546965
+# 37            f4b_mental  2.146752860
+# 38       f4a_ani_rodents  2.128242031
+# 39          f4a_ani_fowl  2.109408364
+# 40     f4a_fuel_charcoal  2.109263691
+# 41        f4a_wash_child  2.102485298
+# 42      f4a_house_agland  2.100858286
+# 43          f4a_wash_def  2.081446632
+# 44       f4a_hometrt_ors  2.050855008
+# 45       f4a_cur_thirsty  2.039341405
+# 46             f4b_admit  2.035341328
+# 47           f4a_ani_cat  2.028895600
+# 48      f4a_drh_restless  2.008692745
+# 49      f4a_hometrt_none  2.006219010
+# 50        f4a_drh_thirst  1.989903327
+# 51          f4a_ani_goat  1.983512343
+# 52         f4a_ani_sheep  1.965060277
+# 53           f3_drh_hosp  1.938471028
+# 54        f4a_house_elec  1.902794723
+# 55        f4a_house_tele  1.878873822
+# 56        f4a_drh_strain  1.871798455
+# 57        f4a_house_cart  1.865632480
+# 58        f4b_under_nutr  1.865103299
+# 59       f4a_house_scoot  1.862757660
+# 60         f4a_ani_other  1.860258580
+# 61           f4a_ani_dog  1.841934002
+# 62    f4a_cur_fastbreath  1.817515063
+# 63     f4a_hometrt_maize  1.808667381
+# 64      f4a_cur_restless  1.805537672
+# 65           f4a_ani_cow  1.789770592
+# 66      f4a_house_fridge  1.760416758
+# 67       f4a_store_water  1.727865719
+# 68      f4a_seek_outside  1.705161801
+# 69       f4a_house_radio  1.687351427
+# 70          f4a_cur_skin  1.644121643
+# 71      f4a_hometrt_herb  1.614692140
+# 72         f4a_house_car  1.594936191
+# 73         f4a_fuel_wood  1.593573791
+# 74          f4a_wash_eat  1.566049316
+# 75         f3_drh_turgor  1.564479665
+# 76       f4a_house_phone  1.554073665
+# 77     f4a_water_pubwell  1.526956325
+# 78             f3_drh_iv  1.522272291
+# 79         f4a_trt_water  1.512272956
+# 80         f4a_fac_waste  1.483835497
+# 81     f4a_hometrt_othr1  1.471740354
+# 82             f4a_floor  1.444051373
+# 83     f4a_drh_lessdrink  1.439941867
+# 84       f4a_seek_healer  1.408916570
+# 85        f4a_water_bore  1.279378336
+# 86        f4a_seek_pharm  1.248598689
+# 87         f4a_wash_othr  1.200642920
+# 88         f4a_fuel_elec  1.185269723
+# 89        f4a_hometrt_ab  1.141552006
+# 90        f4a_water_yard  1.079074414
+# 91        f4a_water_well  1.050117296
+# 92          f4b_abn_hair  1.002766013
+# 93      f4a_water_bought  0.998152642
+# 94            f4a_ani_no  0.987108260
+# 95    f4a_water_deepwell  0.955903988
+# 96        f4b_skin_flaky  0.931009223
+# 97          f4a_drh_conv  0.926307794
+# 98     f4a_water_covwell  0.880948147
+# 99        f4a_fuel_other  0.855616777
+# 100       f4a_water_rain  0.805734293
+# 101      f4a_wash_animal  0.718769868
+# 102      f4b_chest_indrw  0.716935186
+# 103      f4a_fuel_biogas  0.715973088
+# 104   f4a_water_covpwell  0.654292379
+# 105       f4a_seek_remdy  0.612055973
+# 106     f4a_drh_prolapse  0.584523266
+# 107     f4a_hometrt_milk  0.582995922
+# 108      f4a_water_river  0.575534265
+# 109    f4a_hometrt_othr2  0.551970885
+# 110      f4a_fuel_natgas  0.509737053
+# 111        f4a_drh_consc  0.450090698
+# 112          f4b_bipedal  0.448246698
+# 113       f4a_house_none  0.428294076
+# 114       f4a_seek_other  0.390027282
+# 115       f4a_water_pond  0.377378012
+# 116  f4a_hometrt_othrliq  0.330624569
+# 117       f4a_water_othr  0.303518370
+# 118   f4a_water_unspring  0.276996970
+# 119        f4a_fuel_crop  0.275365008
+# 120           f4b_rectal  0.257568073
+# 121      f4a_seek_friend  0.245365337
+# 122     f4a_seek_privdoc  0.199386776
+# 123        f4a_fuel_kero  0.195828314
+# 124        f4a_fuel_coal  0.173718926
+# 125  f4a_water_shallwell  0.155157137
+# 126      f4a_water_house  0.133233067
+# 127         f4a_seek_doc  0.129610448
+# 128       f4a_fuel_grass  0.107568091
+# 129  f4a_water_prospring  0.104023343
+# 130     f4a_hometrt_zinc  0.094172170
+# 131       f4a_house_boat  0.073173049
+# 132     f4a_fuel_propane  0.004994769
+# 133        f4a_fuel_dung  0.000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.7416872 0.002664002 0.7364659 0.7469086  0.95    LR    2
+# 2 0.7201292 0.002874937 0.7144945 0.7257640  0.95    LR    5
+# 3 0.7284253 0.002928582 0.7226854 0.7341652  0.95    LR   10
+# 4 0.7664200 0.002604577 0.7613151 0.7715248  0.95    RF    2
+# 5 0.7461229 0.002705956 0.7408194 0.7514265  0.95    RF    5
+# 6 0.7571733 0.002660589 0.7519586 0.7623880  0.95    RF   10
+
+# nvar    intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>   <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 0.00308   -0.240    0.236 1.01      0.741      1.30
+# 2     5 0.00342   -0.241    0.237 0.996     0.726      1.27
+# 3    10 0.00394   -0.242    0.240 0.973     0.716      1.24
+
+shigella0.5MUAC_Afr_2var <- glm(shigella_afe0.5~base_age+f4a_drh_blood,
+                            data=Afr,family="binomial",control=glm.control(maxit=50))
+summary(shigella0.5MUAC_Afr_2var)
+# Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)    -2.312031   0.103476 -22.344  < 2e-16 ***
+#   base_age        0.023508   0.004072   5.773 7.78e-09 ***
+#   f4a_drh_blood1  1.803718   0.124945  14.436  < 2e-16 ***
+
+round(exp(coef(shigella0.5MUAC_Afr_2var)),2)
+# (Intercept)       base_age f4a_drh_blood1 
+# 0.10           1.02           6.07 
+round(exp(confint(shigella0.5MUAC_Afr_2var)),2)
+# 2.5 % 97.5 %
+#   (Intercept)     0.08   0.12
+# base_age        1.02   1.03
+# f4a_drh_blood1  4.75   7.76
+
+Afr_2var_AfrFit<-Afr %>% select(shigella_afe0.5,base_age,f4a_drh_blood)
+Afr_2var_AfrFit$Afr_pred_glm <- as.numeric(predict(shigella0.5MUAC_Afr_2var,newdata=Afr_2var_AfrFit,type="response"))
+Afr_2var_AfrFit <- roc(response=Afr_2var_AfrFit$shigella_afe0.5,predictor=Afr_2var_AfrFit$Afr_pred_glm)
+paste(round(Afr_2var_AfrFit$auc,2)," (",
+      round(ci.auc(Afr_2var_AfrFit)[1],2),", ",
+      round(ci.auc(Afr_2var_AfrFit)[3],2),")",sep="")
+# "0.74 (0.71, 0.76)"
+
+Asia_2var_AfrFit<-Asia.noBdesh %>% select(shigella_afe0.5,base_age,f4a_drh_blood)
+Asia_2var_AfrFit$Afr_pred_glm <- as.numeric(predict(shigella0.5MUAC_Afr_2var,newdata=Asia_2var_AfrFit,type="response"))
+Asia_2var_AfrFit <- roc(response=Asia_2var_AfrFit$shigella_afe0.5,predictor=Asia_2var_AfrFit$Afr_pred_glm)
+paste(round(Asia_2var_AfrFit$auc,2)," (",
+      round(ci.auc(Asia_2var_AfrFit)[1],2),", ",
+      round(ci.auc(Asia_2var_AfrFit)[3],2),")",sep="")
+# "0.77 (0.74, 0.8)"
+
+####################
+#shigella AFe>=0.5 only MUAC by country - Asia (not including Bdesh), val in Africa
+################### var screening, AUC ####
+names<-append(x=names, values=c("f4b_muac")) #add MUAC to list
+names <- names[!names %in% c("f4b_haz")] #take HAZ off list
+
+shigella0.5MUAC.Asia.noBdesh <- CPR.funct(data=Asia.noBdesh,outcome="shigella_afe0.5",iter=100,nvars_opts=c(2,5,10))
+shigella0.5MUAC.Asia.noBdesh[["df_imps"]]
+shigella0.5MUAC.Asia.noBdesh[["AUC_df"]]
+shigella0.5MUAC.Asia.noBdesh[["calib"]]
+
+# names      var_red
+# 1          f4a_drh_blood 29.095330103
+# 2               base_age 16.453124695
+# 3               f4b_muac 11.630932970
+# 4               f4b_resp 10.385011302
+# 5               f4b_temp  9.020516363
+# 6          f4a_ppl_house  7.874656744
+# 7          f4a_share_fac  6.354448717
+# 8           f4a_drh_days  5.311638480
+# 9       f4a_yng_children  4.618553092
+# 10         f4a_prim_schl  4.391482715
+# 11              f4b_eyes  4.283330465
+# 12         f4b_recommend  4.149788132
+# 13         f4a_drh_vomit  3.886504395
+# 14         f4a_slp_rooms  3.743568867
+# 15       f4a_water_avail  3.575185139
+# 16        f4a_disp_feces  3.439922286
+# 17        f4a_trt_method  3.393119477
+# 18        f4a_max_stools  3.214753499
+# 19        f4a_offr_drink  3.160253216
+# 20         f4a_breastfed  2.922849893
+# 21            f4b_mental  2.551085248
+# 22             f4b_mouth  2.456903154
+# 23          f4a_ms_water  2.382639542
+# 24     f4a_drh_bellypain  2.353316608
+# 25         f4a_drh_cough  2.262631709
+# 26             f3_gender  2.042194321
+# 27       f4a_cur_thirsty  1.978340825
+# 28          f4a_cur_skin  1.959714943
+# 29        f4a_wash_nurse  1.945323941
+# 30         f4a_wash_cook  1.924957087
+# 31        f4a_house_tele  1.899726573
+# 32        f4a_wash_child  1.846567094
+# 33       f4a_hometrt_ors  1.832518890
+# 34          f4a_wash_eat  1.809399586
+# 35        f4a_drh_thirst  1.791580131
+# 36      f4a_hometrt_none  1.742748324
+# 37     f4a_drh_lessdrink  1.722706377
+# 38       f4a_house_phone  1.721428778
+# 39         f4a_trt_water  1.704452932
+# 40          f4a_wash_def  1.679587705
+# 41  f4a_drh_lethrgy_miss  1.676053512
+# 42          f4a_wash_use  1.673317615
+# 43      f4a_relationship  1.618783198
+# 44     f4a_hometrt_maize  1.574840090
+# 45      f4a_cur_restless  1.551631752
+# 46      f4a_cur_drymouth  1.549447991
+# 47           f4a_ani_cat  1.542930085
+# 48      f4a_seek_outside  1.502562180
+# 49      f4a_drh_restless  1.500970508
+# 50      f4a_house_fridge  1.474432225
+# 51          f4a_ani_fowl  1.455164092
+# 52       f4a_house_radio  1.440402805
+# 53              f4b_skin  1.402841105
+# 54       f4a_water_house  1.393965678
+# 55         f4a_fac_waste  1.383895080
+# 56        f4a_drh_strain  1.377774767
+# 57         f4a_fuel_wood  1.357337529
+# 58        f4b_under_nutr  1.353515484
+# 59           f4a_ani_dog  1.269482562
+# 60        f4a_house_bike  1.264953414
+# 61       f4a_fuel_natgas  1.256724797
+# 62         f3_drh_turgor  1.253494764
+# 63      f4a_water_pubtap  1.239893299
+# 64       f4a_store_water  1.220792360
+# 65       f4a_house_scoot  1.214412758
+# 66            f4a_ani_no  1.212242755
+# 67        f4a_water_yard  1.182701419
+# 68             f4a_floor  1.179498964
+# 69     f4a_hometrt_othr1  1.174429232
+# 70    f4a_cur_fastbreath  1.148660525
+# 71          f4a_ani_goat  1.103853735
+# 72             f3_drh_iv  1.083611810
+# 73         f4a_fuel_kero  1.082351403
+# 74         f4a_fuel_coal  1.078000030
+# 75      f4a_fuel_propane  1.029264873
+# 76      f4a_water_bought  1.024489061
+# 77      f4a_seek_privdoc  0.966533958
+# 78       f4a_wash_animal  0.942630577
+# 79           f4a_ani_cow  0.892410867
+# 80       f4a_ani_rodents  0.891110620
+# 81                  site  0.885623070
+# 82           f3_drh_hosp  0.851702408
+# 83             f4b_admit  0.811677039
+# 84        f4a_hometrt_ab  0.773412086
+# 85          f4a_dad_live  0.770031274
+# 86         f4a_drh_consc  0.740379278
+# 87          f4a_seek_doc  0.697453777
+# 88        f4a_seek_pharm  0.637929380
+# 89      f4a_hometrt_milk  0.572408969
+# 90         f4a_wash_othr  0.571999771
+# 91      f4a_hometrt_zinc  0.561839825
+# 92         f4a_ani_other  0.554101416
+# 93     f4a_hometrt_othr2  0.494429427
+# 94        f4a_house_elec  0.470372093
+# 95        f4a_water_othr  0.464010523
+# 96      f4a_drh_prolapse  0.461089591
+# 97          f4b_abn_hair  0.453815618
+# 98    f4a_water_deepwell  0.437486767
+# 99         f4a_house_car  0.414002030
+# 100       f4a_house_none  0.397092908
+# 101       f4a_seek_other  0.373974943
+# 102       f4a_fuel_grass  0.364806031
+# 103      f4b_chest_indrw  0.360302888
+# 104       f4a_house_boat  0.357187969
+# 105     f4a_hometrt_herb  0.274457966
+# 106  f4a_hometrt_othrliq  0.251118354
+# 107     f4a_house_agland  0.237603716
+# 108       f4b_skin_flaky  0.225250096
+# 109           f4b_rectal  0.203053159
+# 110       f4a_house_cart  0.169808532
+# 111       f4a_water_well  0.162458299
+# 112        f4a_fuel_dung  0.160053595
+# 113       f4a_water_pond  0.140588484
+# 114         f4a_drh_conv  0.071871934
+# 115       f4a_seek_remdy  0.063395455
+# 116       f4a_water_bore  0.060791094
+# 117      f4a_seek_healer  0.060019150
+# 118        f4a_fuel_elec  0.055218693
+# 119    f4a_fuel_charcoal  0.051462626
+# 120    f4a_water_covwell  0.022706562
+# 121        f4a_ani_sheep  0.022138112
+# 122   f4a_water_covpwell  0.020278636
+# 123  f4a_water_shallwell  0.010671819
+# 124      f4a_fuel_biogas  0.003539304
+# 125          f4b_bipedal  0.002922190
+# 126      f4a_seek_friend  0.002812229
+# 127        f4a_fuel_crop  0.000000000
+# 128       f4a_fuel_other  0.000000000
+# 129  f4a_water_prospring  0.000000000
+# 130   f4a_water_unspring  0.000000000
+# 131    f4a_water_pubwell  0.000000000
+# 132      f4a_water_river  0.000000000
+# 133       f4a_water_rain  0.000000000
+
+# AUC          SE     lower     upper level Model nvar
+# 1 0.7633949 0.003257704 0.7570099 0.7697798  0.95    LR    2
+# 2 0.7510761 0.003325915 0.7445574 0.7575948  0.95    LR    5
+# 3 0.7457770 0.003450045 0.7390150 0.7525389  0.95    LR   10
+# 4 0.7625287 0.003264888 0.7561297 0.7689278  0.95    RF    2
+# 5 0.7621163 0.003307360 0.7556340 0.7685986  0.95    RF    5
+# 6 0.7697784 0.003211106 0.7634847 0.7760720  0.95    RF   10
+
+# nvar     intc intc_LCI intc_UCI slope slope_LCI slope_UCI
+# <dbl>    <dbl>    <dbl>    <dbl> <dbl>     <dbl>     <dbl>
+#   1     2 -0.00827   -0.309    0.280 0.992     0.731      1.27
+# 2     5 -0.00830   -0.309    0.280 0.977     0.718      1.25
+# 3    10 -0.0115    -0.314    0.279 0.922     0.671      1.19
+
+shigella0.5MUAC_Asia_2var <- glm(shigella_afe0.5~base_age+f4a_drh_blood,
+                             data=Asia.noBdesh,family="binomial",control=glm.control(maxit=50))
+summary(shigella0.5MUAC_Asia_2var)
+# Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)    -2.183348   0.127423 -17.135  < 2e-16 ***
+#   base_age        0.023378   0.004866   4.804 1.55e-06 ***
+#   f4a_drh_blood1  2.436047   0.154864  15.730  < 2e-16 ***
+
+round(exp(coef(shigella0.5MUAC_Asia_2var)),2)
+# (Intercept)       base_age f4a_drh_blood1 
+# 0.11           1.02          11.43 
+round(exp(confint(shigella0.5MUAC_Asia_2var)),2)
+# 2.5 % 97.5 %
+#   (Intercept)     0.09   0.14
+# base_age        1.01   1.03
+# f4a_drh_blood1  8.46  15.54
+
+Asia_2var_AsiaFit<-Asia.noBdesh %>% select(shigella_afe0.5,base_age,f4a_drh_blood)
+Asia_2var_AsiaFit$Asia_pred_glm <- as.numeric(predict(shigella0.5MUAC_Asia_2var,newdata=Asia_2var_AsiaFit,type="response"))
+Asia_2var_AsiaFit <- roc(response=Asia_2var_AsiaFit$shigella_afe0.5,predictor=Asia_2var_AsiaFit$Asia_pred_glm)
+paste(round(Asia_2var_AsiaFit$auc,2)," (",
+      round(ci.auc(Asia_2var_AsiaFit)[1],2),", ",
+      round(ci.auc(Asia_2var_AsiaFit)[3],2),")",sep="")
+# [1] "0.77 (0.74, 0.8)"
+
+Afr_2var_AsiaFit<-Afr %>% select(shigella_afe0.5,base_age,f4a_drh_blood)
+Afr_2var_AsiaFit$Asia_pred_glm <- as.numeric(predict(shigella0.5MUAC_Asia_2var,newdata=Afr_2var_AsiaFit,type="response"))
+Afr_2var_AsiaFit <- roc(response=Afr_2var_AsiaFit$shigella_afe0.5,predictor=Afr_2var_AsiaFit$Asia_pred_glm)
+paste(round(Afr_2var_AsiaFit$auc,2)," (",
+      round(ci.auc(Afr_2var_AsiaFit)[1],2),", ",
+      round(ci.auc(Afr_2var_AsiaFit)[3],2),")",sep="")
+# [1] "0.74 (0.71, 0.76)"
 
